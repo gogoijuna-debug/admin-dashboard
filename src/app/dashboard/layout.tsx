@@ -29,14 +29,25 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 transition-colors duration-300">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
         <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex flex-col items-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center"
         >
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Securing Connection...</p>
+          <div className="relative mb-8">
+             <div className="absolute inset-0 bg-emerald-500/20 blur-[50px] animate-pulse rounded-full" />
+             <div className="relative w-24 h-24 bg-slate-900 dark:bg-emerald-600 rounded-[2.5rem] flex items-center justify-center shadow-2xl overflow-hidden p-2">
+                <div className="w-full h-full bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center">
+                   <div className="w-6 h-6 border-4 border-emerald-500 border-t-transparent rounded-full animate-rotate" />
+                </div>
+             </div>
+          </div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-1">Sanjivani <span className="text-emerald-500">Vet Care</span></h2>
+          <div className="flex items-center gap-2">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em]">Operational Readiness Check...</p>
+          </div>
         </motion.div>
       </div>
     );

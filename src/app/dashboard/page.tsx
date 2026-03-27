@@ -171,10 +171,20 @@ export default function DashboardPage() {
             { label: "Daily Volume", val: `₹${stats.dailyRevenue}`, icon: TrendingUp, color: "purple", trend: "Revenue" }
           ])
         ].map((s, i) => (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} key={i} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-             <div className={`w-12 h-12 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 mb-4`}><s.icon size={24} /></div>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            whileHover={{ y: -5, scale: 1.02 }}
+            transition={{ delay: i * 0.1 }} 
+            key={i} 
+            className="relative group bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
+          >
+             <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800/20 rounded-bl-[4rem] group-hover:bg-emerald-500/5 transition-colors -z-10" />
+             <div className={`w-14 h-14 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 mb-6 group-hover:scale-110 transition-transform`}>
+                <s.icon size={28} />
+             </div>
              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{s.label}</p>
-             <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{s.val}</p>
+             <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic">{s.val}</p>
           </motion.div>
         ))}
       </div>
