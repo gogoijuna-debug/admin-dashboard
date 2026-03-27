@@ -8,18 +8,21 @@ import { auth, db } from "@/lib/firebase";
 interface AuthContextType {
   user: User | null;
   role: "admin" | "doctor" | "manager" | null;
+  profile: any | null;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,
+  profile: null,
   loading: true,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<"admin" | "doctor" | "manager" | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,10 +31,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setRole(userDoc.data().role);
+          const data = userDoc.data();
+          setRole(data.role);
+          setProfile(data);
         }
       } else {
         setRole(null);
+        setProfile(null);
       }
       setLoading(false);
     });
@@ -40,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, role, loading }}>
+    <AuthContext.Provider value={{ user, role, profile, loading }}>
       {children}
     </AuthContext.Provider>
   );
