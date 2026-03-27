@@ -81,7 +81,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar py-2">
         {navItems.map((item, idx) => {
           if (!role || !item.roles.includes(role)) return null;
           const isActive = pathname === item.href;
