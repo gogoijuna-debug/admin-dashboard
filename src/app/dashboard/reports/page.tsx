@@ -79,6 +79,8 @@ export default function ReportsPage() {
     return () => { unsubSales(); unsubAppts(); };
   }, []);
 
+  if (!mounted) return null;
+
   const filterByRange = (data: any[]) => {
     const now = new Date();
     return data.filter(item => {

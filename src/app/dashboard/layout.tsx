@@ -18,8 +18,10 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (!loading && !user) {
       router.push("/login");
     }
@@ -80,8 +82,9 @@ export default function DashboardLayout({
         </div>
 
         <div className="p-6 lg:p-12 max-w-7xl mx-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
+          {mounted && (
+            <AnimatePresence mode="popLayout">
+              <motion.div
               key={pathname}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -91,6 +94,7 @@ export default function DashboardLayout({
               {children}
             </motion.div>
           </AnimatePresence>
+          )}
         </div>
       </main>
     </div>
