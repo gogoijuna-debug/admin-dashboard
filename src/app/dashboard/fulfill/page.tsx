@@ -29,6 +29,7 @@ import {
   Search
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 interface PrescriptionItem {
   id: string;
@@ -57,7 +58,18 @@ interface InventoryItem {
 }
 
 export default function FulfillmentPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+
+  if (role === "doctor") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800">
+        <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-600 mb-6 font-black italic">!</div>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-2">Operational Privacy</h2>
+        <p className="text-slate-500 text-sm max-w-xs font-medium">The Fulfillment & Dispatch Hub is reserved for Managerial and Administrative roles. Clinical duties only beyond this point.</p>
+        <Link href="/dashboard" className="mt-8 px-8 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">Back to Clinical Protocol</Link>
+      </div>
+    );
+  }
   const [prescriptions, setPrescriptions] = useState<Appointment[]>([]);
   const [inventory, setInventory] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);

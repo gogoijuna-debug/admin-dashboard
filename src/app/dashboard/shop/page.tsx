@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { db } from "@/lib/firebase";
 import { 
   collection, 
@@ -50,7 +51,7 @@ interface CartItem extends InventoryItem {
 }
 
 export default function ShopPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [search, setSearch] = useState("");
@@ -129,12 +130,22 @@ export default function ShopPage() {
     }
   };
 
+  if (role === "doctor") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800">
+        <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-600 mb-6 font-black italic">!</div>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-2">Operational Privacy</h2>
+        <p className="text-slate-500 text-sm max-w-xs font-medium">The Retail Shop Hub is reserved for Managerial and Administrative roles. Clinical duties only beyond this point.</p>
+        <Link href="/dashboard" className="mt-8 px-8 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">Back to Clinical Protocol</Link>
+      </div>
+    );
+  }
+
   const filteredItems = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
   const filteredFarmers = farmers.filter(f => f.name.toLowerCase().includes(farmerSearch.toLowerCase()) || f.phone.includes(farmerSearch));
 
   return (
     <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-120px)] gap-6 relative">
-      {/* Left: Product Selection Hub */}
       <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
           <div className="flex-1 relative">
@@ -159,7 +170,7 @@ export default function ShopPage() {
                 <div className="flex justify-between items-start mb-4">
                   <div className="p-3 rounded-2xl bg-emerald-500/5 text-emerald-500"><ShoppingCart size={20} /></div>
                   <div className="text-right">
-                    <p className="text-[9px] font-black text-slate-400 uppercase">₹{item.price}</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase">Per {item.unit}</p>
                     <p className="text-xl font-black text-slate-900 dark:text-white">₹{item.price}</p>
                   </div>
                 </div>
@@ -171,22 +182,15 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {/* Right: Cart & Checkout Hub (Responsive Drawer) */}
       <AnimatePresence>
         {(isCartOpen || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
           <motion.div 
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             className="fixed lg:static inset-0 z-[100] lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-slate-900 lg:rounded-3xl border-l lg:border border-slate-100 dark:border-slate-800 shadow-3xl overflow-hidden"
           >
             <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white italic flex items-center gap-2">
-                  <CreditCard className="text-emerald-500" size={24} /> CHECKOUT
-                </h2>
-              </div>
-              <button onClick={() => setIsCartOpen(false)} className="lg:hidden p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl"><X size={20} /></button>
+              <div><h2 className="text-xl font-black italic flex items-center gap-2 text-slate-900 dark:text-white"><CreditCard className="text-emerald-500" size={24} /> CHECKOUT</h2></div>
+              <button onClick={() => setIsCartOpen(false)} className="lg:hidden p-3 bg-slate-50 rounded-2xl"><X size={20} /></button>
             </div>
 
             <div className="p-6 bg-slate-50/50 dark:bg-slate-950/20 border-b border-slate-50">
@@ -206,13 +210,6 @@ export default function ShopPage() {
                      <div className="mt-2 p-2 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] flex justify-between">
                        <span>{selectedFarmer.name}</span>
                        <button onClick={() => setSelectedFarmer(null)}><X size={10}/></button>
-                     </div>
-                   )}
-                   {!selectedFarmer && farmerSearch && (
-                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 rounded-xl shadow-xl z-10 p-2 max-h-32 overflow-y-auto">
-                       {filteredFarmers.map(f => (
-                         <button key={f.uid} onClick={() => {setSelectedFarmer(f); setFarmerSearch("");}} className="w-full p-2 hover:bg-slate-50 text-[10px] text-left">{f.name}</button>
-                       ))}
                      </div>
                    )}
                  </div>
@@ -237,7 +234,7 @@ export default function ShopPage() {
 
             <div className="p-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-100">
                <div className="flex justify-between items-end mb-6">
-                 <p className="text-[10px] font-black text-slate-400 uppercase">Total</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
                  <p className="text-2xl font-black text-emerald-600 italic">₹{cartTotal}</p>
                </div>
                <button 
@@ -252,7 +249,6 @@ export default function ShopPage() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Floating Hub */}
       <div className="lg:hidden fixed bottom-6 left-6 right-6 z-50">
         <button 
           onClick={() => setIsCartOpen(true)}
@@ -260,33 +256,32 @@ export default function ShopPage() {
         >
           <div className="flex items-center gap-3">
             <ShoppingCart size={24} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Cart Hub ({cart.length})</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">Cart ({cart.length})</span>
           </div>
           <p className="font-black italic">₹{cartTotal}</p>
         </button>
       </div>
 
-      {/* Receipt Modal */}
       <AnimatePresence>
         {showReceipt && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-10 rounded-[2.5rem] w-full max-w-sm text-center">
                <CheckCircle className="mx-auto text-emerald-500 mb-4" size={48} />
-               <h3 className="text-xl font-black italic mb-6">SALE AUTHENTICATED</h3>
+               <h3 className="text-xl font-black italic mb-6 uppercase tracking-tighter">Sale Success</h3>
                <div className="text-left py-4 border-t border-b border-dashed border-slate-200 mb-6 space-y-2">
                   {showReceipt.items.map(i => (
-                    <div key={i.id} className="flex justify-between text-[10px] font-bold">
-                      <span>{i.name} x {i.quantity}</span>
-                      <span>₹{i.price * i.quantity}</span>
+                    <div key={i.id} className="flex justify-between text-[11px] font-bold">
+                      <span className="uppercase">{i.name} x {i.quantity}</span>
+                      <span className="italic">₹{i.price * i.quantity}</span>
                     </div>
                   ))}
-                  <div className="pt-4 flex justify-between font-black text-lg text-emerald-600">
+                  <div className="pt-4 flex justify-between font-black text-xl text-emerald-600">
                     <span>TOTAL</span>
                     <span>₹{showReceipt.total}</span>
                   </div>
                </div>
                <button onClick={() => window.print()} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase mb-2">Print Receipt</button>
-               <button onClick={() => setShowReceipt(null)} className="w-full py-4 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Dismiss</button>
+               <button onClick={() => setShowReceipt(null)} className="w-full py-4 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Dismiss Hub</button>
             </motion.div>
           </div>
         )}
