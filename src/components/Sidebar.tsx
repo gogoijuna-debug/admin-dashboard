@@ -10,8 +10,6 @@ import {
   ChevronRight,
   ShieldCheck,
   Users,
-  Moon,
-  Sun,
   ShoppingCart,
   ClipboardCheck,
   BarChart3
@@ -21,7 +19,6 @@ import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import Link from "next/link";
 import Image from "next/image";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { collection, query, onSnapshot, where, doc, updateDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,7 +27,6 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
   const pathname = usePathname();
   const { role, user } = useAuth();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [snapDocs, setSnapDocs] = useState<any[]>([]);
@@ -127,22 +123,6 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
       </nav>
 
       <div className="p-4 space-y-4">
-        {/* Theme Toggle */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="flex items-center justify-between w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl transition-all hover:border-emerald-500/30 group"
-        >
-          <div className="flex items-center gap-3">
-            {theme === "dark" ? <Moon size={16} className="text-emerald-400" /> : <Sun size={16} className="text-amber-500" />}
-            <span className="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">{theme === 'dark' ? 'Dark' : 'Light'}</span>
-          </div>
-          <div className={`w-8 h-4 rounded-full p-0.5 transition-colors ${theme === 'dark' ? 'bg-emerald-600' : 'bg-slate-300'}`}>
-            <motion.div 
-              animate={{ x: theme === 'dark' ? 16 : 0 }}
-              className="w-3 h-3 rounded-full bg-white shadow-sm" 
-            />
-          </div>
-        </button>
 
         <div className="bg-slate-50/50 dark:bg-slate-950/50 border border-slate-100/50 dark:border-slate-800/50 rounded-2xl p-4 backdrop-blur-sm">
           <div className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-1 flex items-center gap-2">
