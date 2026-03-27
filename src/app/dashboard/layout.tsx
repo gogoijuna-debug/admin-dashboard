@@ -45,7 +45,7 @@ export default function DashboardLayout({
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-[#fafafa] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-hidden relative">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 relative">
       {/* Mobile Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -59,11 +59,13 @@ export default function DashboardLayout({
         )}
       </AnimatePresence>
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-40 w-64 transition-transform duration-300 transform ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+      {/* Stationary Clinical Pillar (Sidebar) */}
+      <aside className={`fixed lg:sticky top-0 h-screen z-40 w-64 transition-transform duration-300 transform border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl lg:shadow-none ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <Sidebar onItemClick={() => setIsMobileMenuOpen(false)} />
       </aside>
       
-      <main className="flex-1 min-h-screen relative overflow-y-auto scroll-smooth">
+      {/* Main Command Area */}
+      <main className="flex-1 relative min-h-screen bg-slate-50 dark:bg-slate-950">
         {/* Mobile Header Toggle */}
         <div className="lg:hidden p-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-30 flex items-center justify-between">
            <div className="flex items-center gap-3">
@@ -85,15 +87,15 @@ export default function DashboardLayout({
           {mounted && (
             <AnimatePresence mode="popLayout">
               <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+                key={pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
           )}
         </div>
       </main>
