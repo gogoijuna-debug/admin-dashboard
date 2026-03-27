@@ -206,14 +206,27 @@ export default function ShopPage() {
                      onChange={(e) => setFarmerSearch(e.target.value)}
                      className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-900 border-none rounded-xl text-xs font-bold"
                    />
-                   {selectedFarmer && (
-                     <div className="mt-2 p-2 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] flex justify-between">
-                       <span>{selectedFarmer.name}</span>
-                       <button onClick={() => setSelectedFarmer(null)}><X size={10}/></button>
-                     </div>
-                   )}
-                 </div>
-               )}
+                    {selectedFarmer && (
+                      <div className="mt-2 p-2 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] flex justify-between">
+                        <span>{selectedFarmer.name}</span>
+                        <button onClick={() => setSelectedFarmer(null)}><X size={10}/></button>
+                      </div>
+                    )}
+                    {!selectedFarmer && farmerSearch && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-950 rounded-2xl shadow-2xl z-20 p-2 max-h-48 overflow-y-auto border border-slate-100 dark:border-slate-800">
+                        {filteredFarmers.map(f => (
+                          <button 
+                            key={f.uid} 
+                            onClick={() => {setSelectedFarmer(f); setFarmerSearch("");}} 
+                            className="w-full p-3 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 rounded-xl text-[10px] font-black uppercase text-left transition-all mb-1 last:mb-0"
+                          >
+                            {f.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
