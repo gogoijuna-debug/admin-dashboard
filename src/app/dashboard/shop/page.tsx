@@ -64,6 +64,7 @@ export default function ShopPage() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [showReceipt, setShowReceipt] = useState<{ id: string; items: CartItem[]; subtotal: number; discountAmount: number; total: number; farmerName: string; date: any } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [discountType, setDiscountType] = useState<"fixed" | "percent">("percent");
   const [discountValue, setDiscountValue] = useState(0);
@@ -76,13 +77,24 @@ export default function ShopPage() {
 
   useEffect(() => {
     setMounted(true);
+
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
     const unsubInv = onSnapshot(query(collection(db, "inventory"), orderBy("name")), (snap) => {
       setItems(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)));
     });
     const unsubFarmers = onSnapshot(query(collection(db, "farmers"), orderBy("name")), (snap) => {
       setFarmers(snap.docs.map(d => ({ uid: d.id, ...d.data() } as any)));
     });
-    return () => { unsubInv(); unsubFarmers(); };
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      unsubInv();
+      unsubFarmers();
+    };
   }, []);
 
   if (!mounted) return null;
@@ -191,6 +203,11 @@ export default function ShopPage() {
   return (
     <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-120px)] gap-6 relative">
       <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Shop</h1>
+          <p className="text-slate-500 font-medium">Direct sales and checkout operations</p>
+        </div>
+
         <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 flex items-center gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
@@ -247,7 +264,7 @@ export default function ShopPage() {
       </div>
 
       <AnimatePresence>
-        {(isCartOpen || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
+        {(isCartOpen || isDesktop) && (
           <motion.div 
             initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
             className="fixed lg:static inset-0 z-[100] lg:z-auto w-full lg:w-96 flex flex-col bg-white dark:bg-slate-900 lg:rounded-3xl border-l lg:border border-slate-100 dark:border-slate-800 shadow-3xl overflow-hidden"

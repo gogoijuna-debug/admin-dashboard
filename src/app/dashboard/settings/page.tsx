@@ -79,8 +79,8 @@ export default function SettingsPage() {
     <div className="max-w-4xl space-y-10 pb-20">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">System Engine</h1>
-          <p className="text-slate-500 font-medium">Global Configuration & Protocol Calibration</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Settings</h1>
+          <p className="text-slate-500 font-medium">Global configuration and clinic controls</p>
         </div>
       </div>
 
@@ -92,9 +92,9 @@ export default function SettingsPage() {
       >
         {/* Clinic Identity Section */}
         <div className="space-y-8">
-           <div className="flex items-center gap-4 text-blue-600 bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10 w-fit">
+           <div className="flex items-center gap-4 text-emerald-600 bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 w-fit">
             <Zap size={24} />
-            <h3 className="font-black text-lg uppercase tracking-tighter italic pr-4">Clinic Identity Hub</h3>
+            <h3 className="font-black text-lg uppercase tracking-tighter italic pr-4">Clinic Identity</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -102,7 +102,7 @@ export default function SettingsPage() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Official Clinic Name</label>
               <input 
                 type="text" required
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-900 dark:text-white"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-slate-900 dark:text-white"
                 value={clinicName} onChange={(e) => setClinicName(e.target.value)}
               />
             </div>
@@ -110,7 +110,7 @@ export default function SettingsPage() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Branding Logo URL</label>
               <input 
                 type="text"
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-900 dark:text-white"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-slate-900 dark:text-white"
                 value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)}
               />
             </div>
@@ -118,7 +118,7 @@ export default function SettingsPage() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Headquarters Address</label>
               <textarea 
                 rows={2}
-                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-slate-900 dark:text-white resize-none"
+                className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-bold text-slate-900 dark:text-white resize-none"
                 value={address} onChange={(e) => setAddress(e.target.value)}
               />
             </div>
@@ -129,7 +129,7 @@ export default function SettingsPage() {
         <div className="space-y-8 pt-4">
            <div className="flex items-center gap-4 text-emerald-600 bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 w-fit">
             <Zap size={24} />
-            <h3 className="font-black text-lg uppercase tracking-tighter italic pr-4">Financial Dynamics</h3>
+            <h3 className="font-black text-lg uppercase tracking-tighter italic pr-4">Financial Settings</h3>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

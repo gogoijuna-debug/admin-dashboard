@@ -202,13 +202,13 @@ export default function AppointmentsPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2 italic">
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Calendar className="text-emerald-500" size={24} />
-            Command Intake
+            Appointments
           </h1>
           <div className="text-slate-500 dark:text-slate-400 font-black mt-0.5 uppercase tracking-widest text-[9px] flex items-center gap-2">
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-             Strategic Analysis & Coordination Center
+             Clinical coordination and status tracking
           </div>
         </div>
         {role === "admin" && (

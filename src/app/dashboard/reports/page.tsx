@@ -142,8 +142,8 @@ export default function ReportsPage() {
     <div className="space-y-10 pb-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Strategic Reports</h1>
-          <p className="text-slate-500 font-medium">Financial and Operational Analytics Engine</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Reports</h1>
+          <p className="text-slate-500 font-medium">Financial and operational analytics</p>
         </div>
         
         <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-x-auto shadow-sm">

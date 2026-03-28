@@ -117,8 +117,8 @@ export default function FarmersPage() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Farmer Network</h1>
-          <p className="text-slate-500 font-medium">Sanjivani Community CRM & Outreach Hub</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Farmers</h1>
+          <p className="text-slate-500 font-medium">Community CRM and outreach management</p>
         </div>
         
         <div className="relative w-full md:w-80">

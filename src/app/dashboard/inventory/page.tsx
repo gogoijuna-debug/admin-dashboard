@@ -146,8 +146,8 @@ export default function InventoryPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Strategic Inventory</h1>
-          <p className="text-slate-500 font-medium">Logistics & Supply Chain Management Hub</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Inventory</h1>
+          <p className="text-slate-500 font-medium">Logistics and supply chain management</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-4">

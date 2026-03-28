@@ -179,7 +179,7 @@ export default function DashboardPage() {
 
   const toggleDuty = async (doctorId: string, currentStatus: boolean) => {
     try {
-      await updateDoc(doc(db, "users", doctorId), { onDuty: !currentStatus });
+      await updateDoc(doc(db, "users", doctorId), { active: !currentStatus });
     } catch (e) { console.error(e); }
   };
 
@@ -192,10 +192,10 @@ export default function DashboardPage() {
       {/* Header Overview */}
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Welcome back, <span className="text-emerald-600 italic">{profile?.displayName || user?.email?.split('@')[0]}</span>
-          </h1>
-          <p className="text-slate-500 font-medium">Sanjivani Strategic Command Center</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Dashboard</h1>
+          <p className="text-slate-500 font-medium">
+            Welcome back, {profile?.displayName || user?.email?.split('@')[0]}. Sanjivani strategic command center.
+          </p>
         </div>
         <div className="flex items-center gap-3 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800">
            <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
@@ -218,7 +218,7 @@ export default function DashboardPage() {
             { label: "My Active Protocol", val: stats.myActiveCases, icon: Activity, color: "blue" },
             { label: "Consults Today", val: stats.todayCases, icon: ClipboardList, color: "emerald" },
             { label: "Consultation Fees Today", val: `₹${stats.dailyRevenue.toLocaleString()}`, icon: TrendingUp, color: "emerald" },
-            { label: "Shift Presence", val: profile?.onDuty ? "Active" : "Offline", icon: Clock, color: profile?.onDuty ? "emerald" : "amber" }
+            { label: "Shift Presence", val: profile?.active !== false ? "Active" : "Offline", icon: Clock, color: profile?.active !== false ? "emerald" : "amber" }
           ] : [
             { label: "Strategic Revenue", val: `₹${(stats.dailyRevenue + stats.todayShopSales).toLocaleString()}`, icon: TrendingUp, color: "emerald" },
             { label: "Retail Velocity", val: `₹${stats.todayShopSales.toLocaleString()}`, icon: ShoppingCart, color: "blue" },
@@ -301,8 +301,8 @@ export default function DashboardPage() {
                        <p className="text-[10px] font-black text-slate-900 dark:text-white">{doc.displayName || "Unauthorized Specialist"}</p>
                     </div>
                     {user?.uid === doc.id && (
-                      <button onClick={() => toggleDuty(doc.id, doc.onDuty)} className={`w-8 h-4 rounded-full relative transition-colors ${doc.onDuty ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                         <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${doc.onDuty ? 'left-4' : 'left-0.5'}`} />
+                       <button onClick={() => toggleDuty(doc.id, doc.active !== false)} className={`w-8 h-4 rounded-full relative transition-colors ${doc.active !== false ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                         <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${doc.active !== false ? 'left-4' : 'left-0.5'}`} />
                       </button>
                     )}
                  </div>
