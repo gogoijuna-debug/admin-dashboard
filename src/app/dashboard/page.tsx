@@ -258,8 +258,8 @@ export default function DashboardPage() {
             <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{isClinician ? "Case Volume Trends" : "Operational Revenue Trends"}</h2>
             <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase italic">Performance Feed</div>
           </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[250px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={220}>
               <AreaChart data={chartData}>
                 <defs><linearGradient id="clr" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
