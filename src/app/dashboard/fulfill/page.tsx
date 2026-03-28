@@ -8,6 +8,7 @@ import {
   onSnapshot, 
   doc, 
   runTransaction,
+  getDocs,
   where, 
   orderBy, 
   limit,
@@ -123,21 +124,27 @@ export default function FulfillmentPage() {
         return acc;
       }, {});
 
-      await runTransaction(db, async (transaction) => {
-        const inventoryUpdates: Array<{ ref: any; nextStock: number }> = [];
+      // Resolve inventory document references before the transaction (transaction.get requires a DocumentReference)
+      const invRefs: Array<{ ref: ReturnType<typeof doc>; medName: string; qtyRequired: number }> = [];
+      for (const [medName, qtyRequired] of Object.entries(groupedMeds)) {
+        const invQ = query(collection(db, "inventory"), where("name", "==", medName), limit(1));
+        const invSnap = await getDocs(invQ);
+        if (invSnap.empty) {
+          throw new Error(`Medicine not found in inventory: ${medName}`);
+        }
+        invRefs.push({ ref: invSnap.docs[0].ref as ReturnType<typeof doc>, medName, qtyRequired });
+      }
 
-        for (const [medName, qtyRequired] of Object.entries(groupedMeds)) {
-          const invQ = query(collection(db, "inventory"), where("name", "==", medName), limit(1));
-          const invSnap = await transaction.get(invQ);
-          if (invSnap.empty) {
-            throw new Error(`Medicine not found in inventory: ${medName}`);
-          }
-          const invDoc = invSnap.docs[0];
-          const currentStock = Number(invDoc.data().stock || 0);
+      await runTransaction(db, async (transaction) => {
+        const inventoryUpdates: Array<{ ref: ReturnType<typeof doc>; nextStock: number }> = [];
+
+        for (const { ref, medName, qtyRequired } of invRefs) {
+          const invDoc = await transaction.get(ref);
+          const currentStock = Number(invDoc.data()?.stock || 0);
           if (currentStock < qtyRequired) {
             throw new Error(`Insufficient stock for ${medName}`);
           }
-          inventoryUpdates.push({ ref: invDoc.ref, nextStock: currentStock - qtyRequired });
+          inventoryUpdates.push({ ref, nextStock: currentStock - qtyRequired });
         }
 
         for (const update of inventoryUpdates) {
@@ -152,7 +159,7 @@ export default function FulfillmentPage() {
 
         const saleRef = doc(collection(db, "sales"));
         transaction.set(saleRef, {
-          items: appt.prescription.map((p) => ({ name: p.name, quantity: 1, price: 0 })),
+          items: (appt.prescription ?? []).map((p) => ({ name: p.name, quantity: 1, price: 0 })),
           totalAmount: 0,
           farmerId: appt.phoneNumber,
           farmerName: appt.farmerName,
