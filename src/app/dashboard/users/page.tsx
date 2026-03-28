@@ -64,13 +64,13 @@ export default function UsersPage() {
 
   if (userRole !== "admin") {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-900 rounded-[3rem] border border-red-100 dark:border-red-900/30">
-        <div className="w-20 h-20 bg-red-500/10 rounded-[2rem] flex items-center justify-center text-red-500 mb-6">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800">
+        <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-600 mb-6">
           <ShieldCheck size={40} />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-2">Access Sanctioned</h2>
-        <p className="text-slate-500 text-sm max-w-xs font-medium">Personnel configuration is reserved for Super Administrators. Access attempt logged.</p>
-        <Link href="/dashboard" className="mt-8 px-8 py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">Return to Command</Link>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Access Restricted</h2>
+        <p className="text-slate-500 text-sm max-w-xs font-medium">This module is available only to authorized administrative roles.</p>
+        <Link href="/dashboard" className="mt-8 px-8 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl">Back to Dashboard</Link>
       </div>
     );
   }

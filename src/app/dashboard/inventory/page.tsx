@@ -81,9 +81,9 @@ export default function InventoryPage() {
         <div className="w-20 h-20 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center text-emerald-600 mb-6 transition-all animate-pulse">
            <ShieldAlert size={40} />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic mb-2">Operational Privacy</h2>
-        <p className="text-slate-500 text-sm max-w-xs font-medium">This Strategic Hub is reserved for Managerial and Administrative roles. Clinical duties only beyond this protocol.</p>
-        <Link href="/dashboard" className="mt-8 px-8 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Back to Clinical Protocol</Link>
+        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Access Restricted</h2>
+        <p className="text-slate-500 text-sm max-w-xs font-medium">This module is available only to authorized administrative roles.</p>
+        <Link href="/dashboard" className="mt-8 px-8 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Back to Dashboard</Link>
       </div>
     );
   }

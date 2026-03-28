@@ -69,7 +69,7 @@ export default function AppointmentsPage() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<"All" | "Consultation" | "Order">("All");
-  const [statusFilter, setStatusFilter] = useState<"All" | "Pending" | "Completed">("All");
+  const [statusFilter, setStatusFilter] = useState<"All" | "Pending" | "Completed" | "Cancelled">("All");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [notesModal, setNotesModal] = useState<{ id: string; existing: string; appt: Appointment } | null>(null);
   const [assignModal, setAssignModal] = useState<string | null>(null);
@@ -241,7 +241,7 @@ export default function AppointmentsPage() {
 
         {/* Row 2: Status Pills */}
         <div className="flex flex-wrap gap-2">
-          {(["All", "Pending", "Completed"] as const).map(s => (
+          {(["All", "Pending", "Completed", "Cancelled"] as const).map(s => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
@@ -249,6 +249,7 @@ export default function AppointmentsPage() {
                 statusFilter === s
                   ? s === "Pending" ? "bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-200/50" :
                     s === "Completed" ? "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200/50" :
+                    s === "Cancelled" ? "bg-red-600 text-white border-red-600 shadow-md shadow-red-200/50" :
                     "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900"
                   : "bg-white dark:bg-slate-900 text-slate-400 border-slate-100 dark:border-slate-800 hover:border-slate-200"
               }`}
