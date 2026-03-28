@@ -305,21 +305,23 @@ export default function AppointmentsPage() {
                   <p className="text-slate-600 dark:text-slate-300 font-bold text-[11px] leading-relaxed line-clamp-3">{appt.issue}</p>
                 </div>
 
-                {/* Assignment Info - Compact */}
+                {/* Assignment Info - Clinical Guarded */}
                 <div className="flex items-center justify-between py-2 border-t border-slate-50 dark:border-slate-800 pt-3">
                    <div className="overflow-hidden flex-1">
-                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Assigned To</p>
-                     <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase truncate">
-                       {appt.assignedDoctorName || 'Not Assigned'}
+                     <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
+                       {appt.type === "Order" ? "Logistics Status" : "Assigned Specialist"}
                      </p>
-                     {appt.isDirectRequest && (
+                     <p className={`text-[10px] font-black uppercase truncate ${appt.type === "Order" ? "text-slate-500" : "text-emerald-600 dark:text-emerald-400"}`}>
+                       {appt.type === "Order" ? "Pharmacy Fulfillment" : (appt.assignedDoctorName || 'Not Assigned')}
+                     </p>
+                     {appt.isDirectRequest && appt.type !== "Order" && (
                        <div className="flex items-center gap-1 mt-0.5">
                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                          <span className="text-[7px] font-black text-blue-500 uppercase tracking-widest">Farmer Direct Request</span>
                        </div>
                      )}
                    </div>
-                   {(role === "admin" || role === "manager") && (
+                   {(role === "admin" || role === "manager") && appt.type !== "Order" && (
                      <button 
                        onClick={() => setAssignModal(appt.id)}
                        className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-all shadow-sm"
