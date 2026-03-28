@@ -148,7 +148,7 @@ export default function DashboardPage() {
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Welcome back, <span className="text-emerald-600 italic">{namePrefix}{profile?.displayName || "Expert"}</span>
+            Welcome back, <span className="text-emerald-600 italic">{profile?.displayName || user?.email?.split('@')[0]}</span>
           </h1>
           <p className="text-slate-500 font-medium">Sanjivani Strategic Command Center</p>
         </div>

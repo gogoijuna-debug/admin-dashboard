@@ -60,9 +60,11 @@ export default function ShopPage() {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [showReceipt, setShowReceipt] = useState<{ id: string; items: CartItem[]; total: number; date: any } | null>(null);
+  const [showReceipt, setShowReceipt] = useState<{ id: string; items: CartItem[]; subtotal: number; discountAmount: number; total: number; farmerName: string; date: any } | null>(null);
   const [mounted, setMounted] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [discountType, setDiscountType] = useState<"fixed" | "percent">("percent");
+  const [discountValue, setDiscountValue] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -100,15 +102,20 @@ export default function ShopPage() {
     }).filter(i => i.quantity > 0));
   };
 
-  const cartTotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+  const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+  const discountAmount = discountType === "percent" ? (subtotal * discountValue / 100) : discountValue;
+  const finalTotal = Math.max(0, subtotal - discountAmount);
 
   const handleCheckout = async () => {
     if (cart.length === 0 || isCheckingOut) return;
     setIsCheckingOut(true);
     try {
       const saleData = {
-        items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
-        totalAmount: cartTotal,
+         items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
+        subtotal,
+        discountAmount,
+        totalAmount: finalTotal,
+        discountInfo: { type: discountType, value: discountValue },
         farmerId: isAnonymous ? "Guest" : selectedFarmer?.uid,
         farmerName: isAnonymous ? "Anonymous Guest" : selectedFarmer?.name,
         processedBy: user?.email,
@@ -118,11 +125,20 @@ export default function ShopPage() {
       for (const item of cart) {
         await updateDoc(doc(db, "inventory", item.id), { stock: increment(-item.quantity) });
       }
-      setShowReceipt({ id: saleRef.id, items: [...cart], total: cartTotal, date: new Date() });
+      setShowReceipt({ 
+        id: saleRef.id, 
+        items: [...cart], 
+        subtotal, 
+        discountAmount, 
+        total: finalTotal, 
+        farmerName: isAnonymous ? "Guest" : selectedFarmer?.name || "Farmer",
+        date: new Date() 
+      });
       setCart([]);
       setSelectedFarmer(null);
       setIsAnonymous(true);
       setIsCartOpen(false);
+      setDiscountValue(0);
     } catch (e) {
       console.error(e);
     } finally {
@@ -245,10 +261,34 @@ export default function ShopPage() {
               ))}
             </div>
 
-            <div className="p-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-100">
-               <div className="flex justify-between items-end mb-6">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
-                 <p className="text-2xl font-black text-emerald-600 italic">₹{cartTotal}</p>
+            <div className="p-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+               <div className="space-y-3 mb-6">
+                 <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2">
+                       <button onClick={() => setDiscountType("percent")} className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${discountType === "percent" ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}>%</button>
+                       <button onClick={() => setDiscountType("fixed")} className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${discountType === "fixed" ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}>₹</button>
+                    </div>
+                    <input 
+                      type="number" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))}
+                      className="w-20 text-right bg-transparent border-none font-black text-slate-900 dark:text-white"
+                      placeholder="0"
+                    />
+                 </div>
+
+                 <div className="flex justify-between items-center text-[10px] font-black text-slate-400 px-1 uppercase tracking-widest">
+                    <span>Subtotal</span>
+                    <span>₹{subtotal.toLocaleString()}</span>
+                 </div>
+                 {discountAmount > 0 && (
+                   <div className="flex justify-between items-center text-[10px] font-black text-emerald-500 px-1 uppercase tracking-widest">
+                      <span>Discount</span>
+                      <span>-₹{discountAmount.toLocaleString()}</span>
+                   </div>
+                 )}
+                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-between items-end">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payable Total</p>
+                   <p className="text-2xl font-black text-emerald-600 italic">₹{finalTotal.toLocaleString()}</p>
+                 </div>
                </div>
                <button 
                  onClick={handleCheckout}
@@ -271,30 +311,85 @@ export default function ShopPage() {
             <ShoppingCart size={24} />
             <span className="text-[10px] font-black uppercase tracking-widest">Cart ({cart.length})</span>
           </div>
-          <p className="font-black italic">₹{cartTotal}</p>
+          <p className="font-black italic">₹{finalTotal.toLocaleString()}</p>
         </button>
       </div>
 
       <AnimatePresence>
         {showReceipt && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white p-10 rounded-[2.5rem] w-full max-w-sm text-center">
-               <CheckCircle className="mx-auto text-emerald-500 mb-4" size={48} />
-               <h3 className="text-xl font-black italic mb-6 uppercase tracking-tighter">Sale Success</h3>
-               <div className="text-left py-4 border-t border-b border-dashed border-slate-200 mb-6 space-y-2">
-                  {showReceipt.items.map(i => (
-                    <div key={i.id} className="flex justify-between text-[11px] font-bold">
-                      <span className="uppercase">{i.name} x {i.quantity}</span>
-                      <span className="italic">₹{i.price * i.quantity}</span>
-                    </div>
-                  ))}
-                  <div className="pt-4 flex justify-between font-black text-xl text-emerald-600">
-                    <span>TOTAL</span>
-                    <span>₹{showReceipt.total}</span>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden">
+               {/* Receipt Header */}
+               <div className="text-center mb-6">
+                 <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-emerald-500/20">
+                   <CheckCircle size={28} />
+                 </div>
+                 <h2 className="text-xl font-black italic tracking-tighter text-slate-900 uppercase">Sanjivani <span className="text-emerald-500">Vet Care</span></h2>
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Official Clinical Receipt</p>
+               </div>
+
+               {/* Transaction Meta */}
+               <div className="space-y-1 mb-6 border-t border-b border-dashed border-slate-200 py-4 text-left">
+                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
+                    <span>TRANS ID:</span>
+                    <span className="text-slate-900">#{showReceipt.id.slice(-8).toUpperCase()}</span>
+                  </div>
+                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
+                    <span>DATE:</span>
+                    <span className="text-slate-900">{showReceipt.date.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
+                    <span>CUSTOMER:</span>
+                    <span className="text-slate-900 truncate max-w-[120px]">{showReceipt.farmerName}</span>
                   </div>
                </div>
-               <button onClick={() => window.print()} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase mb-2">Print Receipt</button>
-               <button onClick={() => setShowReceipt(null)} className="w-full py-4 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Dismiss Hub</button>
+
+               {/* Standard Itemized Table */}
+               <div className="w-full mb-6">
+                  <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-50">
+                    <span className="w-1/2 text-left">ARTICLE</span>
+                    <span className="w-1/4 text-center">QTY</span>
+                    <span className="w-1/4 text-right">TOTAL</span>
+                  </div>
+                  <div className="space-y-3">
+                    {showReceipt.items.map((i, idx) => (
+                      <div key={idx} className="flex justify-between text-[11px] font-bold text-slate-700">
+                        <span className="w-1/2 text-left truncate uppercase italic">{i.name}</span>
+                        <span className="w-1/4 text-center">x{i.quantity}</span>
+                        <span className="w-1/4 text-right">₹{(i.price * i.quantity).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+               </div>
+
+               {/* Grand Breakdown */}
+               <div className="bg-slate-50 rounded-3xl p-5 space-y-2 mb-8 border border-slate-100">
+                  <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase">
+                    <span>SUBTOTAL</span>
+                    <span>₹{showReceipt.subtotal.toLocaleString()}</span>
+                  </div>
+                  {showReceipt.discountAmount > 0 && (
+                    <div className="flex justify-between text-[10px] font-black text-emerald-600 uppercase">
+                      <span>DISCOUNT</span>
+                      <span>-₹{showReceipt.discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-slate-200 flex justify-between items-end">
+                    <span className="text-[10px] font-black text-slate-900 uppercase">GRAND TOTAL</span>
+                    <span className="text-2xl font-black text-emerald-600 italic">₹{showReceipt.total.toLocaleString()}</span>
+                  </div>
+               </div>
+
+               {/* Professional Footer */}
+               <div className="text-center mb-8">
+                 <p className="text-[10px] font-black text-slate-900 italic uppercase tracking-tighter">Thank you for visiting Sanjivani!</p>
+                 <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">This is a system generated medical invoice</p>
+               </div>
+
+               <div className="space-y-2">
+                 <button onClick={() => window.print()} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all">Download / Print Receipt</button>
+                 <button onClick={() => setShowReceipt(null)} className="w-full py-4 text-slate-400 font-black text-[9px] uppercase hover:text-slate-900 transition-colors">Dismiss Hub</button>
+               </div>
             </motion.div>
           </div>
         )}

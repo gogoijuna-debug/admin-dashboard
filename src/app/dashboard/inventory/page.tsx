@@ -30,6 +30,8 @@ interface InventoryItem {
   stock: number;
   unit: string;
   price: number;
+  mrp: number;
+  discountPercentage: number;
   description?: string;
   imageUrl?: string;
 }
@@ -50,6 +52,8 @@ export default function InventoryPage() {
   const [stock, setStock] = useState(0);
   const [unit, setUnit] = useState("kg");
   const [price, setPrice] = useState(0);
+  const [mrp, setMrp] = useState(0);
+  const [discountPercentage, setDiscountPercentage] = useState(0);
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
 
@@ -86,7 +90,17 @@ export default function InventoryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { name, category, stock: Number(stock), unit, price: Number(price), description, imageUrl };
+    const data = { 
+      name, 
+      category, 
+      stock: Number(stock), 
+      unit, 
+      price: Number(price), 
+      mrp: Number(mrp), 
+      discountPercentage: Number(discountPercentage),
+      description, 
+      imageUrl 
+    };
     if (editingItem) {
       await updateDoc(doc(db, "inventory", editingItem.id), data);
     } else {
@@ -98,12 +112,12 @@ export default function InventoryPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingItem(null);
-    setName(""); setCategory("Medicine"); setStock(0); setUnit("kg"); setPrice(0); setDescription(""); setImageUrl("");
+    setName(""); setCategory("Medicine"); setStock(0); setUnit("kg"); setPrice(0); setMrp(0); setDiscountPercentage(0); setDescription(""); setImageUrl("");
   };
 
   const handleEdit = (item: InventoryItem) => {
     setEditingItem(item);
-    setName(item.name); setCategory(item.category); setStock(item.stock); setUnit(item.unit); setPrice(item.price); setDescription(item.description || ""); setImageUrl(item.imageUrl || "");
+    setName(item.name); setCategory(item.category); setStock(item.stock); setUnit(item.unit); setPrice(item.price); setMrp(item.mrp || item.price); setDiscountPercentage(item.discountPercentage || 0); setDescription(item.description || ""); setImageUrl(item.imageUrl || "");
     setShowModal(true);
   };
 
@@ -211,8 +225,20 @@ export default function InventoryPage() {
                        <span className="text-sm font-black text-slate-700 dark:text-slate-300">{item.stock} <span className="text-[10px] text-slate-400 uppercase">{item.unit}</span></span>
                     </div>
                   </td>
-                  <td className="px-6 py-5 border-y border-slate-50 dark:border-slate-800 font-black text-slate-900 dark:text-white">₹{item.price}</td>
-                  <td className="px-6 py-5 border-y border-slate-50 dark:border-slate-800 font-black text-emerald-600 italic">₹{item.price * item.stock}</td>
+                  <td className="px-6 py-5 border-y border-slate-50 dark:border-slate-800">
+                    <div className="flex flex-col">
+                       {item.mrp > item.price && (
+                         <span className="text-[10px] text-slate-400 line-through">₹{item.mrp}</span>
+                       )}
+                       <div className="flex items-center gap-2">
+                          <span className="font-black text-slate-900 dark:text-white">₹{item.price}</span>
+                          {item.discountPercentage > 0 && (
+                            <span className="text-[8px] font-black bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-md">-{item.discountPercentage}%</span>
+                          )}
+                       </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-5 border-y border-slate-50 dark:border-slate-800 font-black text-emerald-600 italic">₹{(item.price * item.stock).toLocaleString()}</td>
                   <td className="px-6 py-5 rounded-r-[1.5rem] border-y border-r border-slate-50 dark:border-slate-800 text-right">
                     <div className="flex items-center justify-end gap-2">
                        <button onClick={() => handleEdit(item)} className="p-3 text-slate-400 hover:text-emerald-500 transition-colors"><Edit2 size={16} /></button>
@@ -254,10 +280,28 @@ export default function InventoryPage() {
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Available Qty</label>
                    <input type="number" required value={stock} onChange={e => setStock(Number(e.target.value))} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-bold" />
                  </div>
-                 <div className="space-y-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Price per Unit</label>
-                   <input type="number" required value={price} onChange={e => setPrice(Number(e.target.value))} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-bold" />
-                 </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MRP (Max Price)</label>
+                    <input type="number" required value={mrp} onChange={e => {
+                      const val = Number(e.target.value);
+                      setMrp(val);
+                      setPrice(val - (val * discountPercentage / 100));
+                    }} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-bold" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Discount %</label>
+                    <input type="number" required value={discountPercentage} onChange={e => {
+                      const val = Number(e.target.value);
+                      setDiscountPercentage(val);
+                      setPrice(mrp - (mrp * val / 100));
+                    }} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-bold" />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">Calculated Final Selling Price</label>
+                    <div className="w-full px-6 py-4 bg-emerald-50 dark:bg-emerald-500/5 text-emerald-600 rounded-2xl font-black text-xl italic">
+                      ₹{price.toFixed(2)}
+                    </div>
+                  </div>
                  <button type="submit" className="col-span-2 mt-6 py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Synchronize Warehouse</button>
                </form>
             </motion.div>
