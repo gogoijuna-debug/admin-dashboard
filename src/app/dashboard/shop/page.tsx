@@ -9,11 +9,9 @@ import {
   query, 
   onSnapshot, 
   doc, 
-  addDoc, 
-  updateDoc, 
+  runTransaction,
   orderBy, 
-  serverTimestamp,
-  increment 
+  serverTimestamp
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { 
@@ -69,6 +67,7 @@ export default function ShopPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [discountType, setDiscountType] = useState<"fixed" | "percent">("percent");
   const [discountValue, setDiscountValue] = useState(0);
+  const [checkoutError, setCheckoutError] = useState("");
   const [clinicSettings, setClinicSettings] = useState({
     name: "Sanjivani Vet Care",
     logo: "",
@@ -112,30 +111,49 @@ export default function ShopPage() {
   };
 
   const subtotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-  const discountAmount = discountType === "percent" ? (subtotal * discountValue / 100) : discountValue;
+  const safeDiscountValue = discountType === "percent"
+    ? Math.min(100, Math.max(0, discountValue || 0))
+    : Math.min(subtotal, Math.max(0, discountValue || 0));
+  const discountAmount = discountType === "percent" ? (subtotal * safeDiscountValue / 100) : safeDiscountValue;
   const finalTotal = Math.max(0, subtotal - discountAmount);
 
   const handleCheckout = async () => {
     if (cart.length === 0 || isCheckingOut) return;
     setIsCheckingOut(true);
+    setCheckoutError("");
     try {
-      const saleData = {
-         items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
-        subtotal,
-        discountAmount,
-        totalAmount: finalTotal,
-        discountInfo: { type: discountType, value: discountValue },
-        farmerId: isAnonymous ? "Guest" : selectedFarmer?.uid,
-        farmerName: isAnonymous ? "Anonymous Guest" : selectedFarmer?.name,
-        processedBy: user?.email,
-        createdAt: serverTimestamp(),
-      };
-      const saleRef = await addDoc(collection(db, "sales"), saleData);
-      for (const item of cart) {
-        await updateDoc(doc(db, "inventory", item.id), { stock: increment(-item.quantity) });
-      }
+      let saleId = "";
+      await runTransaction(db, async (transaction) => {
+        for (const item of cart) {
+          const invRef = doc(db, "inventory", item.id);
+          const invSnap = await transaction.get(invRef);
+          if (!invSnap.exists()) {
+            throw new Error(`Inventory item missing: ${item.name}`);
+          }
+          const currentStock = Number(invSnap.data().stock || 0);
+          if (currentStock < item.quantity) {
+            throw new Error(`Insufficient stock for ${item.name}`);
+          }
+          transaction.update(invRef, { stock: currentStock - item.quantity });
+        }
+
+        const saleRef = doc(collection(db, "sales"));
+        saleId = saleRef.id;
+        transaction.set(saleRef, {
+          items: cart.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
+          subtotal,
+          discountAmount,
+          totalAmount: finalTotal,
+          discountInfo: { type: discountType, value: safeDiscountValue },
+          farmerId: isAnonymous ? "Guest" : selectedFarmer?.uid,
+          farmerName: isAnonymous ? "Anonymous Guest" : selectedFarmer?.name,
+          processedBy: user?.email,
+          createdAt: serverTimestamp(),
+        });
+      });
+
       setShowReceipt({ 
-        id: saleRef.id, 
+        id: saleId, 
         items: [...cart], 
         subtotal, 
         discountAmount, 
@@ -148,7 +166,8 @@ export default function ShopPage() {
       setIsAnonymous(true);
       setIsCartOpen(false);
       setDiscountValue(0);
-    } catch (e) {
+    } catch (e: any) {
+      setCheckoutError(e?.message || "Checkout failed. Please try again.");
       console.error(e);
     } finally {
       setIsCheckingOut(false);
@@ -298,7 +317,8 @@ export default function ShopPage() {
                        <button onClick={() => setDiscountType("fixed")} className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] ${discountType === "fixed" ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-400"}`}>₹</button>
                     </div>
                     <input 
-                      type="number" value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))}
+                      type="number" min={0} max={discountType === "percent" ? 100 : subtotal}
+                      value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))}
                       className="w-20 text-right bg-transparent border-none font-black text-slate-900 dark:text-white"
                       placeholder="0"
                     />
@@ -326,6 +346,9 @@ export default function ShopPage() {
                >
                  {isCheckingOut ? "Processing..." : "Finalize Transaction"}
                </button>
+               {checkoutError && (
+                 <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-red-500">{checkoutError}</p>
+               )}
             </div>
           </motion.div>
         )}

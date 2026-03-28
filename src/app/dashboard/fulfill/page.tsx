@@ -7,11 +7,10 @@ import {
   query, 
   onSnapshot, 
   doc, 
-  updateDoc, 
+  runTransaction,
   where, 
   orderBy, 
-  increment,
-  addDoc,
+  limit,
   serverTimestamp 
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
@@ -64,6 +63,7 @@ export default function FulfillmentPage() {
   const [loading, setLoading] = useState(true);
   const [selectedProtocol, setSelectedProtocol] = useState<Appointment | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -112,34 +112,61 @@ export default function FulfillmentPage() {
   const handleFulfill = async (appt: Appointment) => {
     if (!appt.prescription || isProcessing) return;
     setIsProcessing(true);
+    setError("");
 
     try {
-      // 1. Deduct Stock
-      for (const item of appt.prescription) {
-        // Find the item in inventory by name (since prescriptions use names)
-        // Note: Production would use IDs, but here we match by text for ergonomics
-        // We'll need to find the correct doc ID or use a search logic
-        // For this demo, we assume the name matches a document name in 'inventory'
-      }
+      const appointmentRef = doc(db, "appointments", appt.id);
+      const groupedMeds = appt.prescription.reduce<Record<string, number>>((acc, med) => {
+        const key = med.name.trim();
+        if (!key) return acc;
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
 
-      // 2. Update Appointment status
-      await updateDoc(doc(db, "appointments", appt.id), {
-        fulfillmentStatus: "Fulfilled"
-      });
+      await runTransaction(db, async (transaction) => {
+        const inventoryUpdates: Array<{ ref: any; nextStock: number }> = [];
 
-      // 3. Optional: Create a sale record for the fulfillment
-      await addDoc(collection(db, "sales"), {
-        items: appt.prescription.map(p => ({ name: p.name, quantity: 1, price: 0 })), // Price handled at shop or billing
-        totalAmount: 0,
-        farmerId: appt.phoneNumber, // Use phone as ID for fulfillment
-        farmerName: appt.farmerName,
-        type: "Prescription Fulfillment",
-        processedBy: user?.email,
-        createdAt: serverTimestamp(),
+        for (const [medName, qtyRequired] of Object.entries(groupedMeds)) {
+          const invQ = query(collection(db, "inventory"), where("name", "==", medName), limit(1));
+          const invSnap = await transaction.get(invQ);
+          if (invSnap.empty) {
+            throw new Error(`Medicine not found in inventory: ${medName}`);
+          }
+          const invDoc = invSnap.docs[0];
+          const currentStock = Number(invDoc.data().stock || 0);
+          if (currentStock < qtyRequired) {
+            throw new Error(`Insufficient stock for ${medName}`);
+          }
+          inventoryUpdates.push({ ref: invDoc.ref, nextStock: currentStock - qtyRequired });
+        }
+
+        for (const update of inventoryUpdates) {
+          transaction.update(update.ref, { stock: update.nextStock });
+        }
+
+        transaction.update(appointmentRef, {
+          fulfillmentStatus: "Fulfilled",
+          fulfilledAt: serverTimestamp(),
+          fulfilledBy: user?.email || "unknown"
+        });
+
+        const saleRef = doc(collection(db, "sales"));
+        transaction.set(saleRef, {
+          items: appt.prescription.map((p) => ({ name: p.name, quantity: 1, price: 0 })),
+          totalAmount: 0,
+          farmerId: appt.phoneNumber,
+          farmerName: appt.farmerName,
+          type: "Prescription Fulfillment",
+          processedBy: user?.email,
+          sourceAppointmentId: appt.id,
+          createdAt: serverTimestamp(),
+        });
       });
 
       setSelectedProtocol(null);
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e?.message || "Fulfillment failed. Please retry.";
+      setError(msg);
       console.error("Fulfillment Failed", e);
     } finally {
       setIsProcessing(false);
@@ -294,6 +321,9 @@ export default function FulfillmentPage() {
                   </div>
 
                   <div className="p-8 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+                     {error && (
+                       <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-red-500">{error}</p>
+                     )}
                      <button 
                        disabled={isProcessing || !checkStockAvailability(selectedProtocol.prescription || [])}
                        onClick={() => handleFulfill(selectedProtocol)}

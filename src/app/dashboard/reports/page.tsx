@@ -113,6 +113,11 @@ export default function ReportsPage() {
 
   const currentSales = filterByRange(sales);
   const currentAppts = filterByRange(appts);
+  const statStyles: Record<string, string> = {
+    emerald: "bg-emerald-500/10 text-emerald-600",
+    blue: "bg-blue-500/10 text-blue-600",
+    purple: "bg-purple-500/10 text-purple-600",
+  };
 
   const totalRevenue = currentSales.reduce((sum, s) => sum + s.totalAmount, 0) + 
                        currentAppts.filter(a => a.status === "Completed").reduce((sum, a) => sum + (a.price || 500), 0);
@@ -163,7 +168,7 @@ export default function ReportsPage() {
           { label: "Clinical Cases", val: totalCases, icon: Activity, color: "purple" }
         ].map((s, i) => (
           <div key={i} className="bg-white dark:bg-slate-900 p-8 rounded-[35px] border border-slate-100 dark:border-slate-800 shadow-sm">
-             <div className={`w-12 h-12 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 mb-6`}><s.icon size={24} /></div>
+             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${statStyles[s.color] || statStyles.emerald}`}><s.icon size={24} /></div>
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{s.label}</p>
              <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">{s.val}</p>
           </div>

@@ -135,6 +135,12 @@ export default function InventoryPage() {
 
   const lowStockThreshold = 10;
   const lowStockItems = items.filter(i => i.stock <= lowStockThreshold).length;
+  const statStyles: Record<string, string> = {
+    blue: "bg-blue-500/10 text-blue-600",
+    red: "bg-red-500/10 text-red-600",
+    emerald: "bg-emerald-500/10 text-emerald-600",
+    purple: "bg-purple-500/10 text-purple-600",
+  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -167,7 +173,7 @@ export default function InventoryPage() {
           { label: "Warehouse Unit Count", val: items.reduce((sum, i) => sum + i.stock, 0), icon: Package, color: "purple" }
         ].map((s, i) => (
           <div key={i} className="bg-white dark:bg-slate-900 p-8 rounded-[35px] border border-slate-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
-             <div className={`w-12 h-12 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 mb-6`}><s.icon size={24} /></div>
+             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 ${statStyles[s.color] || statStyles.blue}`}><s.icon size={24} /></div>
              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{s.label}</p>
              <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">{s.val}</p>
           </div>

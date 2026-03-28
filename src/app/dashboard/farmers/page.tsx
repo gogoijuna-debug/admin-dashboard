@@ -61,7 +61,7 @@ export default function FarmersPage() {
     try {
       const q = query(
         collection(db, "appointments"),
-        where("farmerName", "==", farmer.name),
+        where("phoneNumber", "==", farmer.phone),
         orderBy("createdAt", "desc")
       );
       const snap = await getDocs(q);
