@@ -37,7 +37,7 @@ interface AppointmentRecord {
 type TimeRange = "Today" | "Week" | "Month" | "All";
 
 export default function ReportsPage() {
-  const { role } = useAuth();
+  const { role, user, loading } = useAuth();
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [appts, setAppts] = useState<AppointmentRecord[]>([]);
   const [range, setRange] = useState<TimeRange>("Month");
@@ -45,21 +45,45 @@ export default function ReportsPage() {
 
   useEffect(() => {
     setMounted(true);
-    const unsubSales = onSnapshot(query(collection(db, "sales"), orderBy("createdAt", "desc")), (snap) => {
-      setSales(snap.docs.map((d) => ({ id: d.id, ...d.data() } as SaleRecord)));
-    });
+    if (loading || !user) return;
 
-    const unsubAppts = onSnapshot(query(collection(db, "appointments"), orderBy("createdAt", "desc")), (snap) => {
-      setAppts(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AppointmentRecord)));
-    });
+    const unsubSales = onSnapshot(
+      query(collection(db, "sales"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setSales(snap.docs.map((d) => ({ id: d.id, ...d.data() } as SaleRecord)));
+      },
+      (err) => {
+        console.warn("[reports] sales snapshot error", err);
+        setSales([]);
+      },
+    );
+
+    const unsubAppts = onSnapshot(
+      query(collection(db, "appointments"), orderBy("createdAt", "desc")),
+      (snap) => {
+        setAppts(snap.docs.map((d) => ({ id: d.id, ...d.data() } as AppointmentRecord)));
+      },
+      (err) => {
+        console.warn("[reports] appointments snapshot error", err);
+        setAppts([]);
+      },
+    );
 
     return () => {
       unsubSales();
       unsubAppts();
     };
-  }, []);
+  }, [loading, user]);
 
-  if (!mounted) return null;
+  if (!mounted || loading) return null;
+
+  if (!user) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center text-slate-500 dark:text-slate-400 font-semibold">
+        Verifying access...
+      </div>
+    );
+  }
 
   if (role === "doctor") {
     return (
@@ -169,8 +193,8 @@ export default function ReportsPage() {
             <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Velocity Trends</h2>
             <Download className="text-slate-400 cursor-pointer" size={20} />
           </div>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[300px] w-full min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="clr" x1="0" y1="0" x2="0" y2="1">
