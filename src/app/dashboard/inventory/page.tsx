@@ -211,8 +211,14 @@ export default function InventoryPage() {
               {filteredItems.map(item => (
                 <tr key={item.id} className="group bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="px-6 py-5 rounded-l-[1.5rem] border-y border-l border-slate-50 dark:border-slate-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-400"><Package size={20} /></div>
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 overflow-hidden border border-slate-100 dark:border-slate-800">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Package size={24} />
+                        )}
+                      </div>
                       <div>
                         <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{item.name}</p>
                         <p className="text-[9px] font-black text-emerald-600 uppercase tracking-[0.2em]">{item.category}</p>
@@ -298,9 +304,28 @@ export default function InventoryPage() {
                   </div>
                   <div className="space-y-1 col-span-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">Calculated Final Selling Price</label>
-                    <div className="w-full px-6 py-4 bg-emerald-50 dark:bg-emerald-500/5 text-emerald-600 rounded-2xl font-black text-xl italic">
+                    <div className="w-full px-6 py-4 bg-emerald-50 dark:bg-emerald-500/5 text-emerald-600 rounded-2xl font-black text-xl italic mb-4">
                       ₹{price.toFixed(2)}
                     </div>
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Photo URL</label>
+                    <div className="relative group">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
+                        <ImageIcon size={18} />
+                      </div>
+                      <input 
+                        value={imageUrl} 
+                        onChange={e => setImageUrl(e.target.value)} 
+                        placeholder="https://example.com/image.jpg"
+                        className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-950 border border-transparent focus:border-emerald-500/30 rounded-2xl font-bold transition-all outline-none" 
+                      />
+                    </div>
+                    {imageUrl && (
+                      <div className="mt-4 w-20 h-20 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800">
+                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
                  <button type="submit" className="col-span-2 mt-6 py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Synchronize Warehouse</button>
                </form>
