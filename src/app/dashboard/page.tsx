@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, onSnapshot, orderBy, where, doc, updateDoc, getDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, where, doc, getDoc, updateDoc } from "firebase/firestore";
 import { 
   Users, 
   TrendingUp, 
@@ -46,33 +46,32 @@ export default function DashboardPage() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [snapDocs, setSnapDocs] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [consultationFee, setConsultationFee] = useState(300);
 
-  const [consultationFee, setConsultationFee] = useState(500);
+  // 🛡️ Helper: Strict Today Check
+  const isToday = (date: any) => {
+    if (!date) return false;
+    const d = date?.toDate ? date.toDate() : new Date(date);
+    const now = new Date();
+    return (
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
+    );
+  };
 
   useEffect(() => {
     setMounted(true);
     if (!role || !user) return;
 
+    // 🔬 Global Settings Intake
     const fetchSettings = async () => {
       const docSnap = await getDoc(doc(db, "settings", "global"));
       if (docSnap.exists()) {
-        setConsultationFee(docSnap.data().consultationFee || 500);
+        setConsultationFee(docSnap.data().consultationFee || 300);
       }
     };
     fetchSettings();
-
-    // Strategic Date Helpers
-    const getStartOfToday = () => {
-      const d = new Date();
-      d.setHours(0,0,0,0);
-      return d;
-    };
-    
-    const isToday = (date: any) => {
-      const d = date?.toDate ? date.toDate() : new Date(date);
-      const today = getStartOfToday();
-      return d >= today;
-    };
 
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
@@ -81,44 +80,41 @@ export default function DashboardPage() {
       return d;
     });
 
-    // 🔬 Clinical & Logistics Intake
-    const unsubAppts = onSnapshot(collection(db, "appointments"), (snap) => {
+    // 🔬 Unitary Data Stream
+    const unsubAppts = onSnapshot(query(collection(db, "appointments"), orderBy("createdAt", "desc")), (snap) => {
       const allData = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      const today = getStartOfToday();
-
-      // 🛡️ Role-Specific Partitioning
+      
+      // Role-Specific Filtered Set
       const personalData = role === "doctor" 
         ? allData.filter(a => a.type !== "Order" && a.assignedDoctorId === user.uid)
         : allData;
 
-      const myActive = role === "doctor"
-        ? personalData.filter(a => a.status === "Pending" || a.status === "In Progress").length
-        : 0;
-
-      const todayCasesCount = personalData.filter(a => isToday(a.createdAt)).length;
-      
+      // Revenue Metrics (Strict Numeric)
       const ordersRevToday = allData
         .filter(a => a.type === "Order" && a.status === "Completed" && isToday(a.createdAt))
-        .reduce((sum, a) => sum + (a.price || 0), 0);
+        .reduce((sum, a) => sum + (Number(a.price) || 0), 0);
 
       const consultsRevToday = allData
         .filter(a => a.type === "Consultation" && a.status === "Completed" && isToday(a.createdAt))
-        .reduce((sum, a) => sum + (a.price || consultationFee), 0);
+        .filter(a => role === "doctor" ? a.assignedDoctorId === user.uid : true)
+        .reduce((sum, a) => sum + (Number(a.price) || consultationFee), 0);
 
       const systemActive = allData.filter(a => a.status !== "Completed" && a.status !== "Cancelled").length;
 
       setStats(prev => ({ 
         ...prev, 
         activeAppointments: systemActive, 
-        todayCases: todayCasesCount,
-        myActiveCases: myActive,
+        todayCases: personalData.filter(a => isToday(a.createdAt)).length,
+        myActiveCases: role === "doctor" 
+          ? personalData.filter(a => a.status !== "Completed").length
+          : 0,
         totalConsultations: personalData.length,
-        dailyRevenue: ordersRevToday + consultsRevToday 
+        dailyRevenue: (role === "doctor" ? consultsRevToday : (ordersRevToday + consultsRevToday))
       }));
       
       setRecentAppointments(personalData.slice(0, 5));
 
-      // 📊 Clinical Trend Aggregation
+      // 📊 Trend Aggregation
       if (role === "doctor") {
         const trend = last7Days.map(date => ({
           name: date.toLocaleDateString('en-US', { weekday: 'short' }),
@@ -146,14 +142,13 @@ export default function DashboardPage() {
       setSnapDocs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
-    // 💰 Financial ROI Analysis (Admin/Manager ONLY)
+    let unsubSales: any = () => {};
     if (role === "admin" || role === "manager") {
-      const unsubSales = onSnapshot(query(collection(db, "sales"), orderBy("createdAt", "desc")), (snap) => {
+      unsubSales = onSnapshot(query(collection(db, "sales"), orderBy("createdAt", "desc")), (snap) => {
         const sales = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-        
         const todaySalesAmount = sales
           .filter(s => isToday(s.createdAt))
-          .reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+          .reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
         const trend = last7Days.map(date => {
           const daySales = sales.filter(s => {
@@ -163,7 +158,7 @@ export default function DashboardPage() {
           });
           return {
             name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            val: daySales.reduce((sum, s) => sum + (s.totalAmount || 0), 0),
+            val: daySales.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0),
             label: "Revenue"
           };
         });
@@ -171,10 +166,15 @@ export default function DashboardPage() {
         setChartData(trend);
         setStats(prev => ({ ...prev, todayShopSales: todaySalesAmount }));
       });
-      return () => { unsubAppts(); unsubFarmers(); unsubInv(); unsubDocs(); unsubSales(); };
-    } else {
-      return () => { unsubAppts(); unsubFarmers(); unsubInv(); unsubDocs(); };
     }
+
+    return () => { 
+      unsubAppts(); 
+      unsubFarmers(); 
+      unsubInv(); 
+      unsubDocs(); 
+      unsubSales(); 
+    };
   }, [role, user]);
 
   const toggleDuty = async (doctorId: string, currentStatus: boolean) => {
@@ -186,7 +186,6 @@ export default function DashboardPage() {
   if (!mounted || !user) return null;
 
   const isClinician = role === "doctor";
-  const namePrefix = isClinician ? "Dr. " : "";
 
   return (
     <div className="space-y-10 pb-12">
@@ -218,11 +217,11 @@ export default function DashboardPage() {
           ...(isClinician ? [
             { label: "My Active Protocol", val: stats.myActiveCases, icon: Activity, color: "blue" },
             { label: "Consults Today", val: stats.todayCases, icon: ClipboardList, color: "emerald" },
-            { label: "Med Cases Total", val: stats.totalConsultations, icon: Stethoscope, color: "purple" },
+            { label: "Consultation Fees Today", val: `₹${stats.dailyRevenue.toLocaleString()}`, icon: TrendingUp, color: "emerald" },
             { label: "Shift Presence", val: profile?.onDuty ? "Active" : "Offline", icon: Clock, color: profile?.onDuty ? "emerald" : "amber" }
           ] : [
             { label: "Strategic Revenue", val: `₹${(stats.dailyRevenue + stats.todayShopSales).toLocaleString()}`, icon: TrendingUp, color: "emerald" },
-            { label: "Retail Velocity", val: stats.todayShopSales > 0 ? `₹${stats.todayShopSales.toLocaleString()}` : "₹0", icon: ShoppingCart, color: "blue" },
+            { label: "Retail Velocity", val: `₹${stats.todayShopSales.toLocaleString()}`, icon: ShoppingCart, color: "blue" },
             { label: "Operational Load", val: stats.activeAppointments, icon: Activity, color: "purple" },
             { label: "Stock Alerts", val: stats.lowStockItems, icon: Package, color: stats.lowStockItems > 0 ? "red" : "slate" }
           ])
@@ -236,7 +235,14 @@ export default function DashboardPage() {
             className="group relative bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
           >
              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800/20 rounded-bl-[4rem] group-hover:bg-emerald-500/5 transition-colors -z-10" />
-             <div className={`w-14 h-14 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 mb-6 group-hover:scale-110 transition-transform`}>
+             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${
+               s.color === "blue" ? "bg-blue-500/10 text-blue-600" :
+               s.color === "emerald" ? "bg-emerald-500/10 text-emerald-600" :
+               s.color === "purple" ? "bg-purple-500/10 text-purple-600" :
+               s.color === "red" ? "bg-red-500/10 text-red-600" :
+               s.color === "amber" ? "bg-amber-500/10 text-amber-600" :
+               "bg-slate-500/10 text-slate-600"
+             }`}>
                 <s.icon size={28} />
              </div>
              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{s.label}</p>
@@ -246,11 +252,11 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Trend Analysis - Sensitive Context */}
+        {/* Trend Analysis */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{isClinician ? "Case Volume Trends" : "Operational Revenue Trends"}</h2>
-            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase italic">Clinical Feed</div>
+            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded-full uppercase italic">Performance Feed</div>
           </div>
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -265,7 +271,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Specialized Command Hub */}
+        {/* Action Center */}
         <div className="space-y-6">
           {isClinician ? (
             <Link href="/dashboard/appointments" className="block bg-blue-600 p-8 rounded-[40px] text-white shadow-xl shadow-blue-600/20 group hover:scale-[1.02] transition-all">
@@ -296,7 +302,7 @@ export default function DashboardPage() {
                     </div>
                     {user?.uid === doc.id && (
                       <button onClick={() => toggleDuty(doc.id, doc.onDuty)} className={`w-8 h-4 rounded-full relative transition-colors ${doc.onDuty ? 'bg-emerald-500' : 'bg-slate-300'}`}>
-                         <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${doc.onDuty ? 'left-4.5' : 'left-0.5'}`} />
+                         <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-transform ${doc.onDuty ? 'left-4' : 'left-0.5'}`} />
                       </button>
                     )}
                  </div>
@@ -306,9 +312,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Shared Activity - Role Shielded */}
-      <div className={`grid grid-cols-1 ${isClinician ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-8`}>
-         <div className={`${isClinician ? 'lg:col-span-3' : 'lg:col-span-1'} bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm`}>
+      {/* Recent Activity Section */}
+      <div className={`grid grid-cols-1 ${isClinician ? 'lg:grid-cols-1' : 'lg:grid-cols-2'} gap-8`}>
+         <div className="bg-white dark:bg-slate-900 p-8 rounded-[40px] border border-slate-100 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 italic"><Clock className="text-emerald-500" /> Recent Cases</h2>
               <Link href="/dashboard/appointments" className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Active Roster</Link>

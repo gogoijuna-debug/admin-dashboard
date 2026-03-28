@@ -54,10 +54,10 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">Sanjivani</h1>
-              <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.4em] mt-1 ml-1 flex items-center justify-center gap-2">
+              <div className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.4em] mt-1 ml-1 flex items-center justify-center gap-2">
                 <div className="w-1 h-1 bg-emerald-500 rounded-full" />
                 Medical Authority Portal
-              </p>
+              </div>
             </div>
           </motion.div>
 

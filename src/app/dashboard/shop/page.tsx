@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { 
   collection, 
@@ -38,6 +39,9 @@ interface InventoryItem {
   stock: number;
   unit: string;
   price: number;
+  mrp: number;
+  discountPercentage: number;
+  imageUrl?: string;
 }
 
 interface Farmer {
@@ -184,19 +188,39 @@ export default function ShopPage() {
             {filteredItems.map(item => (
               <motion.button
                 key={item.id} onClick={() => addToCart(item)} disabled={item.stock <= 0}
-                className={`flex flex-col text-left bg-white dark:bg-slate-900 p-5 rounded-3xl border transition-all relative ${
+                className={`flex flex-col text-left bg-white dark:bg-slate-900 rounded-3xl border transition-all relative overflow-hidden ${
                   item.stock <= 0 ? "opacity-50 border-slate-100" : "border-slate-100 dark:border-slate-800 hover:border-emerald-500 hover:shadow-lg"
                 }`}
               >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-3 rounded-2xl bg-emerald-500/5 text-emerald-500"><ShoppingCart size={20} /></div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-black text-slate-400 uppercase">Per {item.unit}</p>
-                    <p className="text-xl font-black text-slate-900 dark:text-white">₹{item.price}</p>
+                <div className="w-full h-40 bg-slate-100 dark:bg-slate-800 relative">
+                  {item.imageUrl ? (
+                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized={true} />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-300"><Package size={40} /></div>
+                  )}
+                  {item.discountPercentage > 0 && (
+                     <div className="absolute top-3 left-3 px-2 py-1 bg-red-600 text-white text-[10px] font-black rounded-lg uppercase tracking-tighter">
+                        -{item.discountPercentage}%
+                     </div>
+                  )}
+                </div>
+                <div className="p-5 flex flex-col justify-between flex-1">
+                  <div>
+                    <h3 className="font-black text-slate-900 dark:text-white uppercase truncate text-sm line-clamp-1">{item.name}</h3>
+                    <p className="text-[10px] font-black text-slate-400 mt-1 uppercase">{item.stock} {item.unit} available</p>
+                  </div>
+                  <div className="mt-4 flex items-end justify-between">
+                    <div>
+                      {item.discountPercentage > 0 && (
+                        <p className="text-[10px] font-bold text-slate-400 line-through decoration-red-500/30">₹{item.mrp}</p>
+                      )}
+                      <p className="text-xl font-black text-slate-900 dark:text-white">₹{item.price}</p>
+                    </div>
+                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                      <Plus size={16} />
+                    </div>
                   </div>
                 </div>
-                <h3 className="font-black text-slate-900 dark:text-white uppercase truncate text-sm">{item.name}</h3>
-                <span className="text-[8px] font-black text-slate-400 mt-2 uppercase">{item.stock} {item.unit} available</span>
               </motion.button>
             ))}
           </div>
