@@ -48,12 +48,25 @@ export default function DashboardPage() {
     setMounted(true);
     if (!role) return;
 
+    // Trend Analysis Helpers
+    const last7Days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      d.setHours(0,0,0,0);
+      return d;
+    });
+
     // Real-time Top Stats
     const unsubAppts = onSnapshot(collection(db, "appointments"), (snap) => {
-      const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      const active = data.filter((a: any) => a.status === "Confirmed" || a.status === "In Progress").length;
+      const allData = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       
-      const ordersRev = data
+      const personalData = (role === "doctor" && user) 
+        ? allData.filter(a => a.type !== "Order" && a.doctorId === user.uid)
+        : allData;
+
+      const active = personalData.filter((a: any) => a.status === "Confirmed" || a.status === "In Progress").length;
+      
+      const ordersRev = allData
         .filter((a: any) => a.type === "Order" && a.status === "Completed")
         .reduce((sum: number, a: any) => sum + (a.price || 500), 0);
 
@@ -61,9 +74,23 @@ export default function DashboardPage() {
         ...prev, 
         activeAppointments: active, 
         dailyRevenue: ordersRev,
-        totalConsultations: snap.size
+        totalConsultations: personalData.length
       }));
-      setRecentAppointments(data.slice(0, 5));
+      setRecentAppointments(personalData.slice(0, 5));
+
+      // Calculate trend for clinical view only
+      if (role === "doctor") {
+        const trend = last7Days.map(date => ({
+          name: date.toLocaleDateString('en-US', { weekday: 'short' }),
+          val: personalData.filter((a: any) => {
+            const ad = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+            ad.setHours(0,0,0,0);
+            return ad.getTime() === date.getTime();
+          }).length,
+          label: "Consultations"
+        }));
+        setChartData(trend);
+      }
     });
 
     const unsubFarmers = onSnapshot(collection(db, "farmers"), (snap) => {
@@ -77,14 +104,6 @@ export default function DashboardPage() {
 
     const unsubDocs = onSnapshot(query(collection(db, "users"), where("role", "==", "doctor")), (snap) => {
       setSnapDocs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    });
-
-    // Trend Analysis (Role-Specific)
-    const last7Days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
-      d.setHours(0,0,0,0);
-      return d;
     });
 
     if (role === "admin" || role === "manager") {
@@ -108,20 +127,9 @@ export default function DashboardPage() {
       });
       return () => { unsubAppts(); unsubFarmers(); unsubInv(); unsubDocs(); unsubSales(); };
     } else {
-      // Doctor view shows Appointment Count Trends
-      const trend = last7Days.map(date => ({
-        name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        val: recentAppointments.filter((a: any) => {
-          const ad = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-          ad.setHours(0,0,0,0);
-          return ad.getTime() === date.getTime();
-        }).length,
-        label: "Consultations"
-      }));
-      setChartData(trend);
       return () => { unsubAppts(); unsubFarmers(); unsubInv(); unsubDocs(); };
     }
-  }, [role, recentAppointments.length]);
+  }, [role]);
 
   const toggleDuty = async (doctorId: string, currentStatus: boolean) => {
     try {
@@ -140,7 +148,7 @@ export default function DashboardPage() {
       <section className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            Welcome back, <span className="text-emerald-600 italic">{namePrefix}{profile?.name || "Expert"}</span>
+            Welcome back, <span className="text-emerald-600 italic">{namePrefix}{profile?.displayName || "Expert"}</span>
           </h1>
           <p className="text-slate-500 font-medium">Sanjivani Strategic Command Center</p>
         </div>
@@ -152,7 +160,7 @@ export default function DashboardPage() {
              />
            </div>
            <div className="pr-4">
-             <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">{profile?.name || user?.email}</p>
+             <p className="text-xs font-bold text-slate-900 dark:text-white mb-1">{profile?.displayName || user?.email}</p>
              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-tighter italic">{role}</p>
            </div>
         </div>
@@ -234,9 +242,9 @@ export default function DashboardPage() {
                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl">
                     <div className="flex items-center gap-2">
                        <div className="w-8 h-8 rounded-lg bg-slate-200 overflow-hidden">
-                          <Image src={doc.imageUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=100&auto=format&fit=crop"} alt={doc.name} width={32} height={32} className="object-cover h-full" unoptimized={true} />
+                          <Image src={doc.imageUrl || "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=100&auto=format&fit=crop"} alt={doc.displayName} width={32} height={32} className="object-cover h-full" unoptimized={true} />
                        </div>
-                       <p className="text-[10px] font-black text-slate-900 dark:text-white">{doc.name}</p>
+                       <p className="text-[10px] font-black text-slate-900 dark:text-white">{doc.displayName || "Unauthorized Specialist"}</p>
                     </div>
                     {user?.uid === doc.id && (
                       <button onClick={() => toggleDuty(doc.id, doc.onDuty)} className={`w-8 h-4 rounded-full relative transition-colors ${doc.onDuty ? 'bg-emerald-500' : 'bg-slate-300'}`}>

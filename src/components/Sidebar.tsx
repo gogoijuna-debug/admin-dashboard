@@ -25,7 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
   const pathname = usePathname();
-  const { role, user } = useAuth();
+  const { role, user, profile } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -128,7 +128,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
           <div className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-1 flex items-center gap-2">
              <div className="w-1 h-1 rounded-full bg-emerald-500" /> Identity
           </div>
-          <p className="text-[10px] font-black text-slate-900 dark:text-white truncate uppercase opacity-80">{user?.email}</p>
+          <p className="text-[10px] font-black text-slate-900 dark:text-white truncate uppercase opacity-80">{profile?.displayName || user?.email}</p>
         </div>
         
         {/* Footer Actions */}
