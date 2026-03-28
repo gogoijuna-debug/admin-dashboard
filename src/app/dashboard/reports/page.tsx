@@ -206,6 +206,9 @@ export default function ReportsPage() {
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Reports</h1>
           <p className="text-slate-500 font-medium">Financial and operational analytics</p>
         </div>
+        <Link href="/dashboard/sales" className="inline-flex items-center gap-2 px-5 py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 shadow-sm w-fit">
+          <ShoppingCart size={14} /> Open Sales Hub
+        </Link>
         
         <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-x-auto shadow-sm">
           {["Today", "Week", "Month", "All"].map((r) => (

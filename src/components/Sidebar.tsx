@@ -51,6 +51,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard", roles: ["admin", "doctor", "manager"] },
     { name: "Appointments", icon: CalendarClock, href: "/dashboard/appointments", roles: ["admin", "doctor", "manager"] },
     { name: "Direct Shop", icon: ShoppingCart, href: "/dashboard/shop", roles: ["admin", "manager"] },
+    { name: "Sales", icon: BarChart3, href: "/dashboard/sales", roles: ["admin", "manager"] },
     { name: "Fulfillment", icon: ClipboardCheck, href: "/dashboard/fulfill", roles: ["admin", "manager"] },
     { name: "Financial Reports", icon: BarChart3, href: "/dashboard/reports", roles: ["admin", "manager"] },
     { name: "Farmers", icon: Users, href: "/dashboard/farmers", roles: ["admin", "manager"] },
