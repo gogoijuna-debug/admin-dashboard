@@ -145,6 +145,10 @@ export default function SalesPage() {
     };
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, typeFilter, dateFrom, dateTo, pageSize]);
+
   if (!mounted) return null;
 
   if (role === "doctor") {
@@ -189,10 +193,6 @@ export default function SalesPage() {
 
     return searchMatch && typeMatch && dateMatch;
   });
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, typeFilter, dateFrom, dateTo, pageSize]);
 
   const availableTypes = Array.from(new Set(["All", ...sales.map((sale) => sale.type || "POS Sale")]));
   const totalSalesAmount = filteredSales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
