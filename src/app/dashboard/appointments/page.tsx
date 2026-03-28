@@ -39,6 +39,8 @@ interface Appointment {
   phoneNumber: string;
   issue: string;
   status: "Pending" | "Completed" | "Cancelled";
+  cancelledBy?: string;
+  cancelledAt?: any;
   createdAt: any;
   type: "Consultation" | "Order" | "Visit";
   doctorNotes?: string;
@@ -323,6 +325,11 @@ export default function AppointmentsPage() {
                     appt.status === "Pending" ? "bg-amber-500/5 text-amber-600 border-amber-500/10" :
                     appt.status === "Completed" ? "bg-emerald-500/5 text-emerald-600 border-emerald-500/10" : "bg-slate-50 dark:bg-slate-800 text-slate-500 border-transparent"
                   }`}>{appt.status}</span>
+                  {appt.status === "Cancelled" && appt.cancelledBy === "farmer" && (
+                    <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border bg-red-500/5 text-red-600 border-red-500/10">
+                      Cancelled by farmer
+                    </span>
+                  )}
                 </div>
 
                 <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-100/50 dark:border-slate-800/50 flex-1">
