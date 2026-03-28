@@ -524,15 +524,15 @@ export default function SalesPage() {
           <p className="text-slate-500 font-medium">Dedicated POS registry with reprint, export, and admin controls.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button onClick={exportExcelCsv} className="px-5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 shadow-sm inline-flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 w-full xl:w-auto">
+          <button onClick={exportExcelCsv} className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 shadow-sm inline-flex items-center justify-center gap-2">
             <Download size={14} /> Excel CSV
           </button>
-          <button onClick={exportPdfView} className="px-5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 shadow-sm inline-flex items-center gap-2">
+          <button onClick={exportPdfView} className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 shadow-sm inline-flex items-center justify-center gap-2">
             <Printer size={14} /> PDF / Print
           </button>
           {role === "admin" && (
-            <button onClick={openCreate} className="px-5 py-3 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl inline-flex items-center gap-2">
+            <button onClick={openCreate} className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl inline-flex items-center justify-center gap-2">
               <Plus size={14} /> Add Sale Entry
             </button>
           )}
@@ -614,17 +614,78 @@ export default function SalesPage() {
       </div>
 
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-[1.1fr_1fr_0.9fr_0.8fr_0.8fr_1.2fr] gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400 min-w-[1080px]">
-          <span>Receipt</span>
-          <span>Customer</span>
-          <span>Type</span>
-          <span>Processed By</span>
-          <span>Total</span>
-          <span className="text-right">Actions</span>
+        <div className="lg:hidden divide-y divide-slate-100 dark:divide-slate-800">
+          {paginatedSales.map((sale) => {
+            const saleDate = getSaleDate(sale);
+            const managed = isManagedSale(sale);
+            return (
+              <div key={sale.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-base font-black text-slate-900 dark:text-white">#{sale.id.slice(-8).toUpperCase()}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mt-1">
+                      <Clock3 size={12} /> {saleDate ? saleDate.toLocaleString() : "Pending timestamp"}
+                    </p>
+                  </div>
+                  <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${managed ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-200/70 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+                    {sale.type || "POS Sale"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-[11px]">
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Customer</p>
+                    <p className="font-black text-slate-900 dark:text-white truncate">{sale.farmerName || "Guest"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total</p>
+                    <p className="font-black text-slate-900 dark:text-white">₹{Number(sale.totalAmount || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Processed By</p>
+                    <p className="font-black text-slate-600 dark:text-slate-300 truncate">{sale.processedBy || "Unknown"}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <button onClick={() => openReceipt(sale)} className="px-3 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2">
+                    <Printer size={13} /> Reprint
+                  </button>
+                  {role === "admin" && managed && (
+                    <>
+                      <button onClick={() => openEdit(sale)} className="px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200 inline-flex items-center gap-2">
+                        <Pencil size={13} /> Edit
+                      </button>
+                      <button onClick={() => handleDeleteSale(sale)} className="px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 text-[10px] font-black uppercase tracking-widest text-red-600 inline-flex items-center gap-2">
+                        <Trash2 size={13} /> Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {paginatedSales.length === 0 && (
+            <div className="p-10 text-center">
+              <Receipt size={36} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">No sales entries match the current filters</p>
+            </div>
+          )}
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-[1080px] divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="hidden lg:block overflow-x-auto">
+          <div className="min-w-[1080px]">
+            <div className="grid grid-cols-[1.1fr_1fr_0.9fr_0.8fr_0.8fr_1.2fr] gap-4 px-6 py-4 border-b border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <span>Receipt</span>
+              <span>Customer</span>
+              <span>Type</span>
+              <span>Processed By</span>
+              <span>Total</span>
+              <span className="text-right">Actions</span>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {paginatedSales.map((sale) => {
               const saleDate = getSaleDate(sale);
               const managed = isManagedSale(sale);
@@ -683,6 +744,7 @@ export default function SalesPage() {
                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">No sales entries match the current filters</p>
               </div>
             )}
+            </div>
           </div>
         </div>
 
