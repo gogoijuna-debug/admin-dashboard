@@ -86,6 +86,7 @@ const defaultForm = {
 };
 
 export default function SalesPage() {
+  const pageSizeOptions = [10, 20, 50];
   const { role, user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [sales, setSales] = useState<SaleRecord[]>([]);
@@ -99,6 +100,8 @@ export default function SalesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [isSaving, setIsSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [clinicSettings, setClinicSettings] = useState({
@@ -187,8 +190,24 @@ export default function SalesPage() {
     return searchMatch && typeMatch && dateMatch;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, typeFilter, dateFrom, dateTo, pageSize]);
+
   const availableTypes = Array.from(new Set(["All", ...sales.map((sale) => sale.type || "POS Sale")]));
   const totalSalesAmount = filteredSales.reduce((sum, sale) => sum + Number(sale.totalAmount || 0), 0);
+  const totalPages = Math.max(1, Math.ceil(filteredSales.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const endIndexExclusive = startIndex + pageSize;
+  const paginatedSales = filteredSales.slice(startIndex, endIndexExclusive);
+  const pageStartDisplay = filteredSales.length === 0 ? 0 : startIndex + 1;
+  const pageEndDisplay = Math.min(endIndexExclusive, filteredSales.length);
+
+  const maxPageButtons = 5;
+  const pageGroupStart = Math.floor((safeCurrentPage - 1) / maxPageButtons) * maxPageButtons + 1;
+  const pageGroupEnd = Math.min(totalPages, pageGroupStart + maxPageButtons - 1);
+  const visiblePages = Array.from({ length: pageGroupEnd - pageGroupStart + 1 }, (_, index) => pageGroupStart + index);
 
   const openReceipt = (sale: SaleRecord) => {
     const subtotal = Number(
@@ -573,6 +592,24 @@ export default function SalesPage() {
           />
         </div>
 
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Showing {pageStartDisplay}-{pageEndDisplay} of {filteredSales.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Rows</label>
+            <select
+              value={pageSize}
+              onChange={(event) => setPageSize(Number(event.target.value))}
+              className="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-xs font-black text-slate-700 dark:text-slate-200"
+            >
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>{size}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {actionError && <p className="text-[10px] font-black uppercase tracking-widest text-red-500">{actionError}</p>}
       </div>
 
@@ -588,7 +625,7 @@ export default function SalesPage() {
 
         <div className="overflow-x-auto">
           <div className="min-w-[1080px] divide-y divide-slate-100 dark:divide-slate-800">
-            {filteredSales.map((sale) => {
+            {paginatedSales.map((sale) => {
               const saleDate = getSaleDate(sale);
               const managed = isManagedSale(sale);
               return (
@@ -640,7 +677,7 @@ export default function SalesPage() {
               );
             })}
 
-            {filteredSales.length === 0 && (
+            {paginatedSales.length === 0 && (
               <div className="p-16 text-center">
                 <Receipt size={42} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
                 <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">No sales entries match the current filters</p>
@@ -648,6 +685,41 @@ export default function SalesPage() {
             )}
           </div>
         </div>
+
+        {filteredSales.length > 0 && (
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+              Page {safeCurrentPage} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage === 1}
+                className="px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200 disabled:opacity-40"
+              >
+                Prev
+              </button>
+
+              {visiblePages.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`w-9 h-9 rounded-xl text-[10px] font-black uppercase tracking-widest ${pageNumber === safeCurrentPage ? "bg-slate-900 text-white" : "bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-200"}`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage === totalPages}
+                className="px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-200 disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
