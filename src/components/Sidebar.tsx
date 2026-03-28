@@ -22,6 +22,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { collection, query, onSnapshot, where, doc, updateDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
   const pathname = usePathname();
@@ -130,7 +131,10 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
           <div className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-1 flex items-center gap-2">
              <div className="w-1 h-1 rounded-full bg-emerald-500" /> Identity
           </div>
-          <p className="text-[10px] font-black text-slate-900 dark:text-white truncate uppercase opacity-80">{profile?.displayName || user?.email}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[10px] font-black text-slate-900 dark:text-white truncate uppercase opacity-80 flex-1">{profile?.displayName || user?.email}</p>
+            <NotificationBell />
+          </div>
         </div>
         
         {/* Footer Actions */}

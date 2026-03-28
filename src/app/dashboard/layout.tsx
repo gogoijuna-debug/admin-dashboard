@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import { Menu as SidebarIcon } from "lucide-react";
+import { AdminNotificationsProvider } from "@/context/NotificationsContext";
+import NotificationBell from "@/components/NotificationBell";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
@@ -56,6 +58,7 @@ export default function DashboardLayout({
   if (!user) return null;
 
   return (
+    <AdminNotificationsProvider>
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 relative">
       {/* Mobile Overlay */}
       <AnimatePresence>
@@ -86,12 +89,15 @@ export default function DashboardLayout({
              <h1 className="font-black text-emerald-600 uppercase tracking-tighter italic text-sm">Sanjivani</h1>
            </div>
            
-           <button 
-             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-             className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 active:scale-90 transition-transform"
-           >
-             <SidebarIcon size={20} />
-           </button>
+           <div className="flex items-center gap-2">
+             <NotificationBell />
+             <button 
+               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+               className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 active:scale-90 transition-transform"
+             >
+               <SidebarIcon size={20} />
+             </button>
+           </div>
         </div>
 
         <div className="p-6 lg:p-12 max-w-7xl mx-auto">
@@ -111,5 +117,6 @@ export default function DashboardLayout({
         </div>
       </main>
     </div>
+    </AdminNotificationsProvider>
   );
 }
