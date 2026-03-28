@@ -50,6 +50,16 @@ export default function UsersPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const q = query(collection(db, "users"), orderBy("role"));
+    const unsub = onSnapshot(q, (snap) => {
+      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as AppUser)));
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
 
   if (userRole !== "admin") {
     return (
@@ -63,16 +73,6 @@ export default function UsersPage() {
       </div>
     );
   }
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const q = query(collection(db, "users"), orderBy("role"));
-    const unsub = onSnapshot(q, (snap) => {
-      setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as AppUser)));
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
 
   const resetForm = () => {
     setEmail(""); setPassword(""); setNewRole("doctor");
@@ -145,7 +145,6 @@ export default function UsersPage() {
     await deleteDoc(doc(db, "users", id));
   };
 
-  if (userRole !== "admin") return <div className="p-20 text-center font-black uppercase text-slate-400">Access Restricted</div>;
 
   return (
     <motion.div 
