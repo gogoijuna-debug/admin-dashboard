@@ -36,7 +36,10 @@ export default function DashboardPage() {
     activeAppointments: 0,
     lowStockItems: 0,
     dailyRevenue: 0,
-    totalConsultations: 0
+    totalConsultations: 0,
+    todayCases: 0,
+    myActiveCases: 0,
+    todayShopSales: 0
   });
   const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
   const [lowStockItems, setLowStockItems] = useState<any[]>([]);
@@ -46,9 +49,21 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (!role) return;
+    if (!role || !user) return;
 
-    // Trend Analysis Helpers
+    // Strategic Date Helpers
+    const getStartOfToday = () => {
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      return d;
+    };
+    
+    const isToday = (date: any) => {
+      const d = date?.toDate ? date.toDate() : new Date(date);
+      const today = getStartOfToday();
+      return d >= today;
+    };
+
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (6 - i));
@@ -56,38 +71,49 @@ export default function DashboardPage() {
       return d;
     });
 
-    // Real-time Top Stats
+    // 🔬 Clinical & Logistics Intake
     const unsubAppts = onSnapshot(collection(db, "appointments"), (snap) => {
       const allData = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
-      
-      const personalData = (role === "doctor" && user) 
-        ? allData.filter(a => a.type !== "Order" && a.doctorId === user.uid)
+      const today = getStartOfToday();
+
+      // 🛡️ Role-Specific Partitioning
+      const personalData = role === "doctor" 
+        ? allData.filter(a => a.type !== "Order" && a.assignedDoctorId === user.uid)
         : allData;
 
-      const active = personalData.filter((a: any) => a.status === "Confirmed" || a.status === "In Progress").length;
+      const myActive = role === "doctor"
+        ? personalData.filter(a => a.status === "Pending" || a.status === "In Progress").length
+        : 0;
+
+      const todayCasesCount = personalData.filter(a => isToday(a.createdAt)).length;
       
-      const ordersRev = allData
-        .filter((a: any) => a.type === "Order" && a.status === "Completed")
-        .reduce((sum: number, a: any) => sum + (a.price || 500), 0);
+      const ordersRevToday = allData
+        .filter(a => a.type === "Order" && a.status === "Completed" && isToday(a.createdAt))
+        .reduce((sum, a) => sum + (a.price || 0), 0);
+
+      const systemActive = allData.filter(a => a.status !== "Completed" && a.status !== "Cancelled").length;
 
       setStats(prev => ({ 
         ...prev, 
-        activeAppointments: active, 
-        dailyRevenue: ordersRev,
-        totalConsultations: personalData.length
+        activeAppointments: systemActive, 
+        todayCases: todayCasesCount,
+        myActiveCases: myActive,
+        totalConsultations: personalData.length,
+        dailyRevenue: ordersRevToday // We'll add shop revenue below
       }));
+      
       setRecentAppointments(personalData.slice(0, 5));
 
-      // Calculate trend for clinical view only
+      // 📊 Clinical Trend Aggregation
       if (role === "doctor") {
         const trend = last7Days.map(date => ({
           name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-          val: personalData.filter((a: any) => {
+          val: personalData.filter(a => {
             const ad = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
             ad.setHours(0,0,0,0);
             return ad.getTime() === date.getTime();
           }).length,
-          label: "Consultations"
+          label: "Appointments"
         }));
         setChartData(trend);
       }
@@ -106,30 +132,36 @@ export default function DashboardPage() {
       setSnapDocs(snap.docs.map(d => ({ id: d.id, ...d.data() })));
     });
 
+    // 💰 Financial ROI Analysis (Admin/Manager ONLY)
     if (role === "admin" || role === "manager") {
       const unsubSales = onSnapshot(query(collection(db, "sales"), orderBy("createdAt", "desc")), (snap) => {
         const sales = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
+        
+        const todaySalesAmount = sales
+          .filter(s => isToday(s.createdAt))
+          .reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+
         const trend = last7Days.map(date => {
-          const daySales = sales.filter((s: any) => {
+          const daySales = sales.filter(s => {
             const sd = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt);
             sd.setHours(0,0,0,0);
             return sd.getTime() === date.getTime();
           });
           return {
             name: date.toLocaleDateString('en-US', { weekday: 'short' }),
-            val: daySales.reduce((sum: number, s: any) => sum + (s.totalAmount || 0), 0),
+            val: daySales.reduce((sum, s) => sum + (s.totalAmount || 0), 0),
             label: "Revenue"
           };
         });
+        
         setChartData(trend);
-        const totalShopRev = sales.reduce((sum: number, s: any) => sum + (s.totalAmount || 0), 0);
-        setStats(prev => ({ ...prev, dailyRevenue: prev.dailyRevenue + totalShopRev }));
+        setStats(prev => ({ ...prev, todayShopSales: todaySalesAmount }));
       });
       return () => { unsubAppts(); unsubFarmers(); unsubInv(); unsubDocs(); unsubSales(); };
     } else {
       return () => { unsubAppts(); unsubFarmers(); unsubInv(); unsubDocs(); };
     }
-  }, [role]);
+  }, [role, user]);
 
   const toggleDuty = async (doctorId: string, currentStatus: boolean) => {
     try {
@@ -166,33 +198,35 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Role-Sensitive Performance Metrics */}
+      {/* Specialized Tactics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: "Community Hub", val: stats.totalFarmers, icon: Users, color: "blue", trend: "Farmers" },
-          { label: "Protocol Load", val: stats.activeAppointments, icon: Activity, color: "emerald", trend: "Active" },
           ...(isClinician ? [
-            { label: "Med Cases", val: stats.totalConsultations, icon: ClipboardList, color: "purple", trend: "Volume" },
-            { label: "Shift Status", val: profile?.onDuty ? "Online" : "Away", icon: Clock, color: "emerald", trend: "Presence" }
+            { label: "My Active Protocol", val: stats.myActiveCases, icon: Activity, color: "blue" },
+            { label: "Consults Today", val: stats.todayCases, icon: ClipboardList, color: "emerald" },
+            { label: "Med Cases Total", val: stats.totalConsultations, icon: Stethoscope, color: "purple" },
+            { label: "Shift Presence", val: profile?.onDuty ? "Active" : "Offline", icon: Clock, color: profile?.onDuty ? "emerald" : "amber" }
           ] : [
-            { label: "Stock Alerts", val: stats.lowStockItems, icon: Package, color: "amber", trend: "Inventory" },
-            { label: "Daily Volume", val: `₹${stats.dailyRevenue}`, icon: TrendingUp, color: "purple", trend: "Revenue" }
+            { label: "Strategic Revenue", val: `₹${(stats.dailyRevenue + stats.todayShopSales).toLocaleString()}`, icon: TrendingUp, color: "emerald" },
+            { label: "Retail Velocity", val: stats.todayShopSales > 0 ? `₹${stats.todayShopSales.toLocaleString()}` : "₹0", icon: ShoppingCart, color: "blue" },
+            { label: "Operational Load", val: stats.activeAppointments, icon: Activity, color: "purple" },
+            { label: "Stock Alerts", val: stats.lowStockItems, icon: Package, color: stats.lowStockItems > 0 ? "red" : "slate" }
           ])
         ].map((s, i) => (
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
-            whileHover={{ y: -5, scale: 1.02 }}
+            whileHover={{ y: -5, scale: 1.02, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
             transition={{ delay: i * 0.1 }} 
             key={i} 
-            className="relative group bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
+            className="group relative bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none overflow-hidden"
           >
              <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 dark:bg-slate-800/20 rounded-bl-[4rem] group-hover:bg-emerald-500/5 transition-colors -z-10" />
              <div className={`w-14 h-14 rounded-2xl bg-${s.color}-500/10 flex items-center justify-center text-${s.color}-600 mb-6 group-hover:scale-110 transition-transform`}>
                 <s.icon size={28} />
              </div>
              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{s.label}</p>
-             <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic">{s.val}</p>
+             <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic">{s.val}</p>
           </motion.div>
         ))}
       </div>
