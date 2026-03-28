@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "@/lib/firebase";
-import { collection, onSnapshot, doc, setDoc, deleteDoc, orderBy, query } from "firebase/firestore";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { collection, onSnapshot, doc, setDoc, orderBy, query } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { 
   Users, 
@@ -38,7 +37,7 @@ interface AppUser {
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function UsersPage() {
-  const { role: userRole } = useAuth();
+  const { role: userRole, user: currentUser } = useAuth();
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -52,6 +51,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     const q = query(collection(db, "users"), orderBy("role"));
@@ -80,6 +80,18 @@ export default function UsersPage() {
     setDisplayName(""); setQualification(""); setBio(""); setImageUrl("");
     setEditingUser(null);
     setError("");
+    setSuccess("");
+  };
+
+  const validatePassword = (value: string) => /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(value);
+
+  const getAuthHeaders = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error("Your session expired. Please sign in again.");
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    };
   };
 
   const handleEdit = (user: AppUser) => {
@@ -97,32 +109,48 @@ export default function UsersPage() {
     e.preventDefault();
     setSaving(true);
     setError("");
+    setSuccess("");
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!normalizedEmail) throw new Error("Email is required.");
+      if (!displayName.trim()) throw new Error("Display name is required.");
+
       if (editingUser) {
-        // Update existing user profile
         await setDoc(doc(db, "users", editingUser.id), {
-          email, 
+          email: normalizedEmail,
           role: newRole, 
-          displayName,
-          qualification: newRole === "doctor" ? qualification : "",
-          bio: newRole === "doctor" ? bio : "",
-          imageUrl,
+          displayName: displayName.trim(),
+          qualification: newRole === "doctor" ? qualification.trim() : "",
+          bio: newRole === "doctor" ? bio.trim() : "",
+          imageUrl: imageUrl.trim(),
           active: editingUser.active !== undefined ? editingUser.active : true,
           updatedAt: new Date().toISOString()
         }, { merge: true });
+        setSuccess("Staff profile updated.");
       } else {
-        // Create new user (requires password)
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", cred.user.uid), {
-          email, 
-          role: newRole, 
-          displayName,
-          qualification: newRole === "doctor" ? qualification : "",
-          bio: newRole === "doctor" ? bio : "",
-          imageUrl,
-          active: true,
-          createdAt: new Date().toISOString()
+        if (!validatePassword(password)) {
+          throw new Error("Password must be at least 8 characters and include an uppercase letter, a number, and a special character.");
+        }
+
+        const response = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: await getAuthHeaders(),
+          body: JSON.stringify({
+            email: normalizedEmail,
+            password,
+            role: newRole,
+            displayName: displayName.trim(),
+            qualification: qualification.trim(),
+            bio: bio.trim(),
+            imageUrl: imageUrl.trim(),
+          }),
         });
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || "Unable to create user.");
+        }
+        setSuccess("Staff account created.");
       }
       setShowModal(false);
       resetForm();
@@ -143,7 +171,21 @@ export default function UsersPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Erase this authority record from the global directory? Status: IRREVERSIBLE.")) return;
-    await deleteDoc(doc(db, "users", id));
+    setError("");
+    setSuccess("");
+    try {
+      const response = await fetch(`/api/admin/users?uid=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: await getAuthHeaders(),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.error || "Unable to delete user.");
+      }
+      setSuccess(id === currentUser?.uid ? "Your staff record was deleted. Sign out now to avoid a stale session." : "Staff account deleted.");
+    } catch (err: any) {
+      setError(err.message || "Unable to delete user.");
+    }
   };
 
 
@@ -153,6 +195,12 @@ export default function UsersPage() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 pb-20"
     >
+      {(error || success) && (
+        <div className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest ${error ? "border-red-200 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-950/20" : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20"}`}>
+          {error || success}
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2 italic">
@@ -168,13 +216,17 @@ export default function UsersPage() {
           <button
             onClick={async () => {
               setSaving(true);
+              setError("");
+              setSuccess("");
               try {
                 const batch = users.filter(u => u.role === "doctor" && u.active === undefined);
                 for (const u of batch) {
                   await setDoc(doc(db, "users", u.id), { active: true }, { merge: true });
                 }
-                alert(`DIRECTORY SYNCED: ${batch.length} identities successfully sanctioned.`);
-              } catch (e) { alert("Sync Failed"); }
+                setSuccess(`Directory synced. ${batch.length} staff records updated.`);
+              } catch (e) {
+                setError("Directory sync failed.");
+              }
               setSaving(false);
             }}
             className="hidden md:flex bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-emerald-500 font-black py-3 px-6 rounded-2xl items-center gap-2 transition-all border border-transparent hover:border-emerald-500/20 uppercase text-[9px] tracking-widest active:scale-95"
@@ -342,9 +394,10 @@ export default function UsersPage() {
                         <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Secure Protocol (Pass)</label>
                         <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-xl p-3.5 border border-transparent focus-within:border-emerald-500/20 transition-all">
                           <Lock size={16} className="text-slate-400" />
-                          <input type="password" required minLength={6} className="bg-transparent flex-1 outline-none font-black text-slate-800 dark:text-white text-xs"
+                          <input type="password" required minLength={8} className="bg-transparent flex-1 outline-none font-black text-slate-800 dark:text-white text-xs"
                             value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
                         </div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Use 8+ chars with uppercase, number, and special character.</p>
                       </div>
                     )}
                     <div className="col-span-full space-y-2">

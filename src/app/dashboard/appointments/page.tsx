@@ -79,6 +79,7 @@ export default function AppointmentsPage() {
   const [rxList, setRxList] = useState<PrescriptionItem[]>([]);
   const [showRxEditor, setShowRxEditor] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -112,14 +113,25 @@ export default function AppointmentsPage() {
   }, [role, user]);
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    await updateDoc(doc(db, "appointments", id), { status: newStatus });
+    try {
+      await updateDoc(doc(db, "appointments", id), { status: newStatus });
+      setFeedback({ type: "success", message: `Appointment marked ${newStatus}.` });
+    } catch (error) {
+      setFeedback({ type: "error", message: "Unable to update appointment status." });
+    }
   };
 
   const handleBulkStatus = async (newStatus: string) => {
     setSaving(true);
-    await Promise.all(selectedIds.map(id => updateDoc(doc(db, "appointments", id), { status: newStatus })));
-    setSelectedIds([]);
-    setSaving(false);
+    try {
+      await Promise.all(selectedIds.map(id => updateDoc(doc(db, "appointments", id), { status: newStatus })));
+      setFeedback({ type: "success", message: `${selectedIds.length} appointments updated to ${newStatus}.` });
+      setSelectedIds([]);
+    } catch (error) {
+      setFeedback({ type: "error", message: "Bulk update failed." });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleAssign = async (apptId: string, doctor: Doctor) => {
@@ -135,7 +147,12 @@ export default function AppointmentsPage() {
   const handleDelete = async (id: string) => {
     if (role !== "admin") return;
     if (!confirm("Delete this record permanently?")) return;
-    await deleteDoc(doc(db, "appointments", id));
+    try {
+      await deleteDoc(doc(db, "appointments", id));
+      setFeedback({ type: "success", message: "Appointment deleted." });
+    } catch (error) {
+      setFeedback({ type: "error", message: "Unable to delete appointment." });
+    }
   };
 
   const toggleSelect = (id: string) => {
@@ -177,6 +194,12 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6 pb-20 relative">
+      {feedback && (
+        <div className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest ${feedback.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20" : "border-red-200 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-950/20"}`}>
+          {feedback.message}
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2 italic">

@@ -41,6 +41,7 @@ export default function Sidebar({ onItemClick }: { onItemClick?: () => void }) {
   useEffect(() => setMounted(true), []);
 
   const handleLogout = async () => {
+    if (!confirm("Log out of the admin dashboard now?")) return;
     await signOut(auth);
     if (onItemClick) onItemClick();
     router.push("/login");

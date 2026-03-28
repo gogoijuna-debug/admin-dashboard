@@ -38,6 +38,7 @@ export default function FarmersPage() {
   const [selectedFarmerHistory, setSelectedFarmerHistory] = useState<any[] | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [viewingFarmer, setViewingFarmer] = useState<Farmer | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, "farmers"), orderBy("joinedAt", "desc"));
@@ -78,8 +79,10 @@ export default function FarmersPage() {
     if (!confirm("Erase this farmer record from the unified database?")) return;
     try {
       await deleteDoc(doc(db, "farmers", id));
+      setFeedback({ type: "success", message: "Farmer record deleted." });
     } catch (e) {
       console.error(e);
+      setFeedback({ type: "error", message: "Unable to delete farmer record." });
     }
   };
 
@@ -106,6 +109,12 @@ export default function FarmersPage() {
 
   return (
     <div className="space-y-6 relative min-h-screen">
+      {feedback && (
+        <div className={`rounded-2xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest ${feedback.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20" : "border-red-200 bg-red-50 text-red-600 dark:border-red-900/40 dark:bg-red-950/20"}`}>
+          {feedback.message}
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Farmer Network</h1>
@@ -185,6 +194,14 @@ export default function FarmersPage() {
           ))}
         </AnimatePresence>
       </div>
+
+      {!loading && filteredFarmers.length === 0 && (
+        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] p-12 text-center">
+          <Users size={40} className="mx-auto mb-4 text-slate-300 dark:text-slate-700" />
+          <h3 className="text-lg font-black uppercase tracking-tight text-slate-700 dark:text-slate-200">No farmers found</h3>
+          <p className="mt-2 text-sm font-medium text-slate-500">Try a different name, phone number, or village.</p>
+        </div>
+      )}
 
       {/* History Slide-over/Modal */}
       <AnimatePresence>
