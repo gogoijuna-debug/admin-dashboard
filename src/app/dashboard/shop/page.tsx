@@ -65,6 +65,11 @@ export default function ShopPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [discountType, setDiscountType] = useState<"fixed" | "percent">("percent");
   const [discountValue, setDiscountValue] = useState(0);
+  const [clinicSettings, setClinicSettings] = useState({
+    name: "Sanjivani Vet Care",
+    logo: "",
+    address: ""
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -319,13 +324,26 @@ export default function ShopPage() {
         {showReceipt && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden">
-               {/* Receipt Header */}
+                {/* Receipt Header */}
                <div className="text-center mb-6">
-                 <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-emerald-500/20">
-                   <CheckCircle size={28} />
-                 </div>
-                 <h2 className="text-xl font-black italic tracking-tighter text-slate-900 uppercase">Sanjivani <span className="text-emerald-500">Vet Care</span></h2>
-                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Official Clinical Receipt</p>
+                 {clinicSettings.logo ? (
+                   <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-lg border border-slate-100">
+                     <img src={clinicSettings.logo} alt="Clinic Logo" className="w-full h-full object-cover" />
+                   </div>
+                 ) : (
+                   <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white mx-auto mb-3 shadow-lg shadow-emerald-500/20">
+                     <CheckCircle size={28} />
+                   </div>
+                 )}
+                 <h2 className="text-xl font-black italic tracking-tighter text-slate-900 uppercase">
+                    {clinicSettings.name.split(" ").map((w, i) => (
+                      <span key={i} className={i === 1 ? "text-emerald-500" : ""}>{w} </span>
+                    ))}
+                 </h2>
+                 {clinicSettings.address && (
+                   <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest mt-1 max-w-[200px] mx-auto leading-relaxed">{clinicSettings.address}</p>
+                 )}
+                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2 pt-2 border-t border-slate-50">Official Clinical Receipt</p>
                </div>
 
                {/* Transaction Meta */}

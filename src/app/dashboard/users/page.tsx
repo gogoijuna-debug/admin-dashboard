@@ -18,7 +18,8 @@ import {
   BookOpen,
   Camera,
   ArrowRight,
-  ChevronLeft
+  ChevronLeft,
+  CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
 
@@ -245,12 +246,23 @@ export default function UsersPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 border ${
-                      user.role === 'admin' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-500/20'
+                    <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 border shadow-sm ${
+                      user.role === 'admin' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20'
                     }`}>
                       {user.role === 'admin' ? <ShieldCheck size={10} /> : <Stethoscope size={10} />}
                       {user.role}
                     </div>
+                    {user.role === 'doctor' && (
+                      <div className="bg-emerald-500/10 text-emerald-600 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-emerald-500/20">
+                        <CheckCircle2 size={10} /> Verified Specialist
+                      </div>
+                    )}
+                    {user.active !== false && (
+                      <div className="bg-slate-900 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 border border-slate-800">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        On Duty
+                      </div>
+                    )}
                     {user.role === 'doctor' && (
                       <button 
                         onClick={() => toggleStatus(user)}

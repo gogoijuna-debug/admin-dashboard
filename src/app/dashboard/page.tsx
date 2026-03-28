@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, onSnapshot, orderBy, where, doc, updateDoc } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy, where, doc, updateDoc, getDoc } from "firebase/firestore";
 import { 
   Users, 
   TrendingUp, 
@@ -47,9 +47,19 @@ export default function DashboardPage() {
   const [snapDocs, setSnapDocs] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
 
+  const [consultationFee, setConsultationFee] = useState(500);
+
   useEffect(() => {
     setMounted(true);
     if (!role || !user) return;
+
+    const fetchSettings = async () => {
+      const docSnap = await getDoc(doc(db, "settings", "global"));
+      if (docSnap.exists()) {
+        setConsultationFee(docSnap.data().consultationFee || 500);
+      }
+    };
+    fetchSettings();
 
     // Strategic Date Helpers
     const getStartOfToday = () => {
@@ -91,6 +101,10 @@ export default function DashboardPage() {
         .filter(a => a.type === "Order" && a.status === "Completed" && isToday(a.createdAt))
         .reduce((sum, a) => sum + (a.price || 0), 0);
 
+      const consultsRevToday = allData
+        .filter(a => a.type === "Consultation" && a.status === "Completed" && isToday(a.createdAt))
+        .reduce((sum, a) => sum + (a.price || consultationFee), 0);
+
       const systemActive = allData.filter(a => a.status !== "Completed" && a.status !== "Cancelled").length;
 
       setStats(prev => ({ 
@@ -99,7 +113,7 @@ export default function DashboardPage() {
         todayCases: todayCasesCount,
         myActiveCases: myActive,
         totalConsultations: personalData.length,
-        dailyRevenue: ordersRevToday // We'll add shop revenue below
+        dailyRevenue: ordersRevToday + consultsRevToday 
       }));
       
       setRecentAppointments(personalData.slice(0, 5));
