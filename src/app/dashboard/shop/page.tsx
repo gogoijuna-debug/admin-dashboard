@@ -9,6 +9,7 @@ import {
   query, 
   onSnapshot, 
   doc, 
+  getDoc,
   runTransaction,
   orderBy, 
   serverTimestamp
@@ -90,6 +91,24 @@ export default function ShopPage() {
     const unsubFarmers = onSnapshot(query(collection(db, "farmers"), orderBy("name")), (snap) => {
       setFarmers(snap.docs.map(d => ({ uid: d.id, ...d.data() } as any)));
     });
+
+    const fetchSettings = async () => {
+      try {
+        const snap = await getDoc(doc(db, "settings", "global"));
+        if (snap.exists()) {
+          const data = snap.data();
+          setClinicSettings({
+            name: data.clinicName || "Sanjivani Vet Care",
+            logo: data.logoUrl || "",
+            address: data.address || "",
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load clinic settings", e);
+      }
+    };
+    fetchSettings();
+
     return () => {
       window.removeEventListener("resize", handleResize);
       unsubInv();

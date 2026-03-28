@@ -21,6 +21,10 @@ interface PrescriptionViewProps {
   date: string;
   issue: string;
   medications: PrescriptionItem[];
+  clinicName?: string;
+  clinicAddress?: string;
+  clinicPhone?: string;
+  clinicLogoUrl?: string;
   onClose: () => void;
 }
 
@@ -32,6 +36,10 @@ export default function PrescriptionView({
   date,
   issue,
   medications,
+  clinicName = "Sanjivani Vet Care",
+  clinicAddress = "Golaghat, Assam, 785621",
+  clinicPhone = "+91 94350 00000",
+  clinicLogoUrl,
   onClose
 }: PrescriptionViewProps) {
   const handlePrint = () => {
@@ -116,17 +124,22 @@ export default function PrescriptionView({
           {/* Clinic Branding */}
           <div className="flex justify-between items-start border-b-4 border-emerald-500 pb-8">
             <div className="space-y-1">
+              {clinicLogoUrl ? (
+                <div className="w-14 h-14 rounded-xl overflow-hidden border border-slate-100 mb-2">
+                  <img src={clinicLogoUrl} alt="Clinic Logo" className="w-full h-full object-cover" />
+                </div>
+              ) : null}
               <h1 className="text-2xl sm:text-3xl font-black text-emerald-600 tracking-tighter uppercase italic flex items-center gap-3">
-                SANJIVANI <span className="text-slate-900">VET CARE</span>
+                {clinicName.toUpperCase()}
               </h1>
               <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Excellence in Veterinary Logistics</p>
             </div>
             <div className="text-right space-y-1">
               <p className="flex items-center justify-end gap-2 text-[9px] sm:text-[10px] font-bold text-slate-600">
-                <MapPin size={12} className="text-emerald-500" /> Golaghat, Assam, 785621
+                <MapPin size={12} className="text-emerald-500" /> {clinicAddress}
               </p>
               <p className="flex items-center justify-end gap-2 text-[9px] sm:text-[10px] font-bold text-slate-600">
-                <Phone size={12} className="text-emerald-500" /> +91 94350 00000
+                <Phone size={12} className="text-emerald-500" /> {clinicPhone}
               </p>
             </div>
           </div>

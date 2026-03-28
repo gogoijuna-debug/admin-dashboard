@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, where } from "firebase/firestore";
+import { collection, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, where, getDoc } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { 
   Calendar, 
@@ -82,6 +82,12 @@ export default function AppointmentsPage() {
   const [showRxEditor, setShowRxEditor] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [clinicSettings, setClinicSettings] = useState({
+    name: "Sanjivani Vet Care",
+    address: "Golaghat, Assam, 785621",
+    phone: "+91 94350 00000",
+    logo: "",
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -106,6 +112,24 @@ export default function AppointmentsPage() {
     const unsubInv = onSnapshot(query(collection(db, "inventory"), where("category", "==", "Medicine")), (snap) => {
       setInventoryMeds(snap.docs.map(d => d.data().name));
     });
+
+    const fetchSettings = async () => {
+      try {
+        const snap = await getDoc(doc(db, "settings", "global"));
+        if (snap.exists()) {
+          const data = snap.data();
+          setClinicSettings({
+            name: data.clinicName || "Sanjivani Vet Care",
+            address: data.address || "Golaghat, Assam, 785621",
+            phone: data.whatsapp || "+91 94350 00000",
+            logo: data.logoUrl || "",
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load clinic settings", e);
+      }
+    };
+    fetchSettings();
 
     return () => {
       unsubAppts();
@@ -431,6 +455,10 @@ export default function AppointmentsPage() {
           phoneNumber={viewingRx.phoneNumber || "N/A"}
           doctorName={viewingRx.assignedDoctorName || "Authorized Physician"}
           doctorQuals={viewingRx.assignedDoctorQuals}
+          clinicName={clinicSettings.name}
+          clinicAddress={clinicSettings.address}
+          clinicPhone={clinicSettings.phone}
+          clinicLogoUrl={clinicSettings.logo}
           date={viewingRx.createdAt?.seconds 
             ? new Date(viewingRx.createdAt.seconds * 1000).toLocaleDateString()
             : new Date().toLocaleDateString()}

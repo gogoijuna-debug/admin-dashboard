@@ -60,13 +60,30 @@ export default function FarmersPage() {
     setViewingFarmer(farmer);
     setHistoryLoading(true);
     try {
-      const q = query(
-        collection(db, "appointments"),
-        where("phoneNumber", "==", farmer.phone),
-        orderBy("createdAt", "desc")
-      );
-      const snap = await getDocs(q);
-      setSelectedFarmerHistory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const merged = new Map<string, any>();
+      const queries = [
+        query(collection(db, "appointments"), where("phoneNumber", "==", farmer.phone)),
+        query(collection(db, "appointments"), where("farmerName", "==", farmer.name)),
+      ];
+
+      if (farmer.deviceId) {
+        queries.push(query(collection(db, "appointments"), where("farmerId", "==", farmer.deviceId)));
+      }
+
+      for (const q of queries) {
+        const snap = await getDocs(q);
+        snap.docs.forEach((d) => {
+          merged.set(d.id, { id: d.id, ...d.data() });
+        });
+      }
+
+      const sorted = Array.from(merged.values()).sort((a, b) => {
+        const aSec = a.createdAt?.seconds || 0;
+        const bSec = b.createdAt?.seconds || 0;
+        return bSec - aSec;
+      });
+
+      setSelectedFarmerHistory(sorted);
     } catch (e) {
       console.error(e);
       setSelectedFarmerHistory([]);

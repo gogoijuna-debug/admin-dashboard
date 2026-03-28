@@ -266,14 +266,14 @@ export default function InventoryPage() {
 
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] w-full max-w-2xl border border-slate-100 dark:border-slate-800">
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] w-full max-w-2xl border border-slate-100 dark:border-slate-800 my-4 md:my-8 max-h-[90vh] overflow-y-auto">
                <div className="flex justify-between items-center mb-10">
                  <h2 className="text-2xl font-black italic uppercase tracking-tighter">{editingItem ? 'Edit Product Protocol' : 'New Stock Activation'}</h2>
                  <button onClick={closeModal} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl"><ChevronRight className="rotate-90" /></button>
                </div>
-               <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
-                 <div className="col-span-2 space-y-1">
+               <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="md:col-span-2 space-y-1">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Name</label>
                    <input required value={name} onChange={e => setName(e.target.value)} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-bold" />
                  </div>
@@ -308,13 +308,13 @@ export default function InventoryPage() {
                       setPrice(mrp - (mrp * val / 100));
                     }} className="w-full px-6 py-4 bg-slate-50 dark:bg-slate-950 border-none rounded-2xl font-bold" />
                   </div>
-                  <div className="space-y-1 col-span-2">
+                  <div className="space-y-1 md:col-span-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-emerald-600">Calculated Final Selling Price</label>
                     <div className="w-full px-6 py-4 bg-emerald-50 dark:bg-emerald-500/5 text-emerald-600 rounded-2xl font-black text-xl italic mb-4">
                       ₹{price.toFixed(2)}
                     </div>
                   </div>
-                  <div className="col-span-2 space-y-1">
+                  <div className="md:col-span-2 space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Photo URL</label>
                     <div className="relative group">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-500 transition-colors">
@@ -333,7 +333,7 @@ export default function InventoryPage() {
                       </div>
                     )}
                   </div>
-                 <button type="submit" className="col-span-2 mt-6 py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Synchronize Warehouse</button>
+                 <button type="submit" className="md:col-span-2 mt-6 py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Synchronize Warehouse</button>
                </form>
             </motion.div>
           </div>
