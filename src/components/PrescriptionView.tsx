@@ -66,6 +66,11 @@ export default function PrescriptionView({
     >
       <style jsx global>{`
         @media print {
+          @page {
+            margin: 8mm;
+            size: A4;
+          }
+
           /* Force hide everything on the page */
           body * {
             visibility: hidden !important;
@@ -99,6 +104,11 @@ export default function PrescriptionView({
             max-width: none !important;
             border-radius: 0 !important;
           }
+
+          #prescription-content {
+            padding: 8mm 10mm !important;
+            gap: 18px !important;
+          }
         }
       `}</style>
 
@@ -120,7 +130,7 @@ export default function PrescriptionView({
         </div>
 
         {/* The Actual Prescription View */}
-        <div id="prescription-content" className="p-8 sm:p-12 space-y-8 sm:space-y-12 bg-white print:p-10">
+        <div id="prescription-content" className="p-8 sm:p-12 space-y-8 sm:space-y-12 bg-white print:p-4 print:space-y-5">
           {/* Clinic Branding */}
           <div className="flex justify-between items-start border-b-4 border-emerald-500 pb-8">
             <div className="space-y-1">

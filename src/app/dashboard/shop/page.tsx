@@ -53,6 +53,8 @@ interface CartItem extends InventoryItem {
   quantity: number;
 }
 
+type ReceiptLayout = "normal" | "thermal";
+
 export default function ShopPage() {
   const { user, role } = useAuth();
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -70,6 +72,7 @@ export default function ShopPage() {
   const [discountType, setDiscountType] = useState<"fixed" | "percent">("percent");
   const [discountValue, setDiscountValue] = useState(0);
   const [checkoutError, setCheckoutError] = useState("");
+  const [receiptLayout, setReceiptLayout] = useState<ReceiptLayout>("normal");
   const [clinicSettings, setClinicSettings] = useState({
     name: "Sanjivani Vet Care",
     logo: "",
@@ -192,6 +195,7 @@ export default function ShopPage() {
         farmerName: isAnonymous ? "Guest" : selectedFarmer?.name || "Farmer",
         date: new Date() 
       });
+      setReceiptLayout("normal");
       setCart([]);
       setSelectedFarmer(null);
       setIsAnonymous(true);
@@ -405,10 +409,83 @@ export default function ShopPage() {
 
       <AnimatePresence>
         {showReceipt && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white p-8 rounded-[2.5rem] w-full max-w-sm shadow-2xl overflow-hidden">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md receipt-modal-container">
+            <style jsx global>{`
+              @media print {
+                @page {
+                  margin: 6mm;
+                }
+
+                body * {
+                  visibility: hidden !important;
+                }
+
+                .receipt-modal-container,
+                .receipt-modal-container * {
+                  visibility: visible !important;
+                }
+
+                .receipt-modal-container {
+                  position: fixed !important;
+                  inset: 0 !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  background: white !important;
+                  align-items: flex-start !important;
+                  justify-content: center !important;
+                }
+
+                .receipt-paper {
+                  margin: 0 !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                  border-radius: 0 !important;
+                  background: white !important;
+                }
+
+                .receipt-paper--normal {
+                  width: 190mm !important;
+                  max-width: 190mm !important;
+                  padding: 10mm !important;
+                }
+
+                .receipt-paper--thermal {
+                  width: 78mm !important;
+                  max-width: 78mm !important;
+                  padding: 3mm !important;
+                }
+
+                .print-hide {
+                  display: none !important;
+                }
+              }
+            `}</style>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className={`bg-white p-8 rounded-[2.5rem] w-full shadow-2xl overflow-hidden receipt-paper ${receiptLayout === "thermal" ? "max-w-[320px] receipt-paper--thermal" : "max-w-xl receipt-paper--normal"}`}
+            >
+               <div className="mb-5 p-3 rounded-2xl border border-slate-100 bg-slate-50 print-hide">
+                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Print Layout</p>
+                 <div className="grid grid-cols-2 gap-2">
+                   <button
+                     onClick={() => setReceiptLayout("normal")}
+                     className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${receiptLayout === "normal" ? "bg-slate-900 text-white" : "bg-white text-slate-500 border border-slate-200"}`}
+                   >
+                     Normal
+                   </button>
+                   <button
+                     onClick={() => setReceiptLayout("thermal")}
+                     className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors ${receiptLayout === "thermal" ? "bg-slate-900 text-white" : "bg-white text-slate-500 border border-slate-200"}`}
+                   >
+                     Thermal
+                   </button>
+                 </div>
+               </div>
+
                 {/* Receipt Header */}
-               <div className="text-center mb-6">
+               <div className={`text-center ${receiptLayout === "thermal" ? "mb-4" : "mb-6"}`}>
                  {clinicSettings.logo ? (
                    <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-lg border border-slate-100">
                      <img src={clinicSettings.logo} alt="Clinic Logo" className="w-full h-full object-cover" />
@@ -430,7 +507,7 @@ export default function ShopPage() {
                </div>
 
                {/* Transaction Meta */}
-               <div className="space-y-1 mb-6 border-t border-b border-dashed border-slate-200 py-4 text-left">
+               <div className={`space-y-1 border-t border-b border-dashed border-slate-200 text-left ${receiptLayout === "thermal" ? "mb-4 py-3" : "mb-6 py-4"}`}>
                   <div className="flex justify-between text-[9px] font-black uppercase text-slate-400">
                     <span>TRANS ID:</span>
                     <span className="text-slate-900">#{showReceipt.id.slice(-8).toUpperCase()}</span>
@@ -446,7 +523,7 @@ export default function ShopPage() {
                </div>
 
                {/* Standard Itemized Table */}
-               <div className="w-full mb-6">
+               <div className={`w-full ${receiptLayout === "thermal" ? "mb-4" : "mb-6"}`}>
                   <div className="flex justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 pb-2 border-b border-slate-50">
                     <span className="w-1/2 text-left">ARTICLE</span>
                     <span className="w-1/4 text-center">QTY</span>
@@ -464,7 +541,7 @@ export default function ShopPage() {
                </div>
 
                {/* Grand Breakdown */}
-               <div className="bg-slate-50 rounded-3xl p-5 space-y-2 mb-8 border border-slate-100">
+                <div className={`bg-slate-50 border border-slate-100 space-y-2 ${receiptLayout === "thermal" ? "rounded-2xl p-3 mb-5" : "rounded-3xl p-5 mb-8"}`}>
                   <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase">
                     <span>SUBTOTAL</span>
                     <span>₹{showReceipt.subtotal.toLocaleString()}</span>
@@ -482,12 +559,12 @@ export default function ShopPage() {
                </div>
 
                {/* Professional Footer */}
-               <div className="text-center mb-8">
+               <div className={`text-center ${receiptLayout === "thermal" ? "mb-5" : "mb-8"}`}>
                  <p className="text-[10px] font-black text-slate-900 italic uppercase tracking-tighter">Thank you for visiting Sanjivani!</p>
                  <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">This is a system generated medical invoice</p>
                </div>
 
-               <div className="space-y-2">
+               <div className="space-y-2 print-hide">
                  <button onClick={() => window.print()} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl active:scale-95 transition-all">Download / Print Receipt</button>
                  <button onClick={() => setShowReceipt(null)} className="w-full py-4 text-slate-400 font-black text-[9px] uppercase hover:text-slate-900 transition-colors">Dismiss Hub</button>
                </div>
